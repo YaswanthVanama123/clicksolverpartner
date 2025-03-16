@@ -1,20 +1,48 @@
 buildscript {
     ext {
-        buildToolsVersion = "35.0.0"
-        minSdkVersion = 24
-        compileSdkVersion = 35
+        buildToolsVersion = "34.0.0"
+        minSdkVersion = 23
+        compileSdkVersion = 34
         targetSdkVersion = 34
-        ndkVersion = "26.1.10909125"
-        kotlinVersion = "1.9.24"
+        ndkVersion = "27.0.12077973"
+        kotlinVersion = "1.9.22"
+        googlePlayServicesLocationVersion = "21.0.1"
     }
     repositories {
         google()
         mavenCentral()
     }
     dependencies {
-        classpath("com.android.tools.build:gradle")
+        classpath("com.android.tools.build:gradle:8.2.1") // Ensure compatible Gradle version
         classpath("com.facebook.react:react-native-gradle-plugin")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
+        classpath('com.google.gms:google-services:4.3.10')
+        classpath('com.google.firebase:firebase-crashlytics-gradle:2.9.6')
+    }
+}
+
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url("${project(':react-native-background-geolocation').projectDir}/libs") }
+        maven { url 'https://repo.maven.apache.org/maven2' }
+        maven { url 'https://jitpack.io' }
+        maven { url 'https://developer.huawei.com/repo/' }
+        maven { url("${project(':react-native-background-fetch').projectDir}/libs") }
+        maven {
+            url 'https://api.mapbox.com/downloads/v2/releases/maven'
+            authentication {
+                basic(BasicAuthentication)
+            }
+            credentials {
+                // Do not change the username below.
+                username = 'mapbox'
+                // Use your Mapbox secret token as the password.
+                password = 'sk.eyJ1IjoieWFzd2FudGh2YW5hbWEiLCJhIjoiY2x6Y2N5ODF5MDloYzJpczh5aHN5NjV1ZiJ9.Y-QWaZyYCZKup-gUZTj61g'
+            }
+        }
     }
 }
 
