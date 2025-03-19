@@ -554,6 +554,7 @@ const WorkerNavigationScreen = () => {
             </Mapbox.ShapeSource>
           )}
         </Mapbox.MapView>
+
         <TouchableOpacity
           style={styles.refreshContainer}
           onPress={handleRefresh}
@@ -564,7 +565,19 @@ const WorkerNavigationScreen = () => {
           </Animated.View>
         </TouchableOpacity>
       </View>
-
+      <TouchableOpacity
+        style={styles.backIconContainer}
+        onPress={() => {
+          navigation.dispatch(
+            CommonActions.reset({
+              index: 0,
+              routes: [{ name: 'Tabs', state: { routes: [{ name: 'Home' }] } }],
+            })
+          );
+        }}
+      >
+        <AntDesign name="arrowleft" size={24} color="#000" />
+      </TouchableOpacity>
       {/* CANCEL BUTTON */}
       <TouchableOpacity style={styles.cancelButton} onPress={handleCancelModal}>
         <Text style={styles.cancelText}>Cancel</Text>
@@ -768,6 +781,16 @@ function dynamicStyles(isDarkMode) {
       padding: 7,
       elevation: 3,
       zIndex: 999,
+    },
+    backIconContainer: {
+      position: 'absolute',
+      top: 40,   // adjust as needed
+      left: 15,  // adjust as needed
+      zIndex: 999,
+      padding: 8,
+      backgroundColor: '#ffffff',
+      borderRadius: 25,
+      elevation: 3,
     },
     cancelButton: {
       position: 'absolute',

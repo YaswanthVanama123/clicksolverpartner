@@ -345,10 +345,13 @@ const RegistrationScreen = () => {
       )}
 
       <View style={styles.header}>
-        <TouchableOpacity onPress={handleEdit} style={styles.editContainer}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <AntDesign name="arrowleft" size={24} color={isDarkMode ? "#ffffff" : "#333"} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle} >Profile</Text>
+        <TouchableOpacity onPress={handleEdit} style={styles.editButton}>
           <Feather name="edit" size={24} color={isDarkMode ? "#ffffff" : "#333"} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Profile</Text>
       </View>
 
       <ScrollView style={styles.scrollContainer}>
@@ -662,11 +665,6 @@ const RegistrationScreen = () => {
               onSwipeFail={() => setTitleColor('#FF5722')}
             />
           ) : (
-            // <View style={styles.buttonContainer}>
-            //   <TouchableOpacity style={styles.doneButton} onPress={handleLogout}>
-            //     <Text style={styles.doneText}>Logout</Text>
-            //   </TouchableOpacity>
-            // </View>
             <></>
           )}
         </View>
@@ -719,21 +717,23 @@ function dynamicStyles(width, isDarkMode) {
       shadowOpacity: 0.5,
       shadowRadius: 5,
       backgroundColor: isDarkMode ? '#1f1f1f' : '#FFFFFF',
+      position: 'relative',
       zIndex: 1,
     },
-    editContainer: {
-      flexDirection: 'row',
-      justifyContent: 'flex-end',
-      flex: 1,
+    backButton: {
+      // position: 'absolute',
+      left: isTablet ? 20 : 16,
     },
     headerTitle: {
-      position: 'absolute',
-      left: '40%',
+      flex: 1,
+      textAlign: 'center',
       fontSize: isTablet ? 22 : 20,
       fontWeight: 'bold',
-      marginLeft: 10,
       color: isDarkMode ? '#ffffff' : '#1D2951',
-      textAlign: 'center',
+    },
+    editButton: {
+      position: 'absolute',
+      right: isTablet ? 20 : 16,
     },
     scrollContainer: {
       flex: 1,

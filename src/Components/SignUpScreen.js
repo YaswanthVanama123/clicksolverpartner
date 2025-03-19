@@ -10,6 +10,7 @@ import {
   Platform,
   ScrollView,
   useWindowDimensions,
+  Linking,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import FontAwesome6 from 'react-native-vector-icons/FontAwesome6';
@@ -47,6 +48,9 @@ const SignUpScreen = () => {
   const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [referralCode, setReferralCode] = useState('');
+  // New state for Privacy Policy checkbox
+  const [isPrivacyAccepted, setIsPrivacyAccepted] = useState(false);
+
   const route = useRoute();
   const navigation = useNavigation();
 
@@ -70,6 +74,10 @@ const SignUpScreen = () => {
   );
 
   const handleSignUp = async () => {
+    if (!isPrivacyAccepted) {
+      Alert.alert("Privacy Policy", "Please accept the Privacy Policy to complete signup.");
+      return;
+    }
     try {
       const response = await axios.post(
         'https://backend.clicksolver.com/api/worker/signup',
@@ -87,10 +95,6 @@ const SignUpScreen = () => {
       if (token) {
         await EncryptedStorage.setItem('sign_up', 'true');
         await EncryptedStorage.setItem('pcs_token', token);
-        // Alert.alert(
-        //   'Sign Up Successful',
-        //   message || 'You have signed up successfully.'
-        // );
         navigation.replace('PartnerSteps');
       }
     } catch (error) {
@@ -157,6 +161,29 @@ const SignUpScreen = () => {
           style={styles.input}
           placeholderTextColor={isDarkMode ? '#cccccc' : '#9e9e9e'}
         />
+
+        {/* Privacy Policy Checkbox */}
+        <View style={styles.privacyContainer}>
+          <TouchableOpacity
+            onPress={() => setIsPrivacyAccepted(!isPrivacyAccepted)}
+            style={styles.checkbox}
+          >
+            {isPrivacyAccepted ? (
+              <Icon name="check-square-o" size={20} color="#FF4500" />
+            ) : (
+              <Icon name="square-o" size={20} color="#FF4500" />
+            )}
+          </TouchableOpacity>
+          <Text style={styles.privacyText}>
+            I agree to the{' '}
+            <Text
+              style={styles.linkText}
+              onPress={() => Linking.openURL('https://clicksolver.com/privacy-policy/')}
+            >
+              Privacy Policy
+            </Text> 
+          </Text>
+        </View>
 
         <TouchableOpacity style={styles.button} onPress={handleSignUp}>
           <Text style={styles.buttonText}>Sign Up</Text>
@@ -226,6 +253,22 @@ function dynamicStyles(width, isDarkMode) {
       color: '#ffffff',
       fontSize: isTablet ? 20 : 18,
       fontWeight: 'bold',
+    },
+    privacyContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 20,
+    },
+    checkbox: {
+      marginRight: 10,
+    },
+    privacyText: {
+      fontSize: isTablet ? 16 : 14,
+      color: isDarkMode ? '#cccccc' : '#333333',
+    },
+    linkText: {
+      color: '#FF4500',
+      textDecorationLine: 'underline',
     },
   });
 }

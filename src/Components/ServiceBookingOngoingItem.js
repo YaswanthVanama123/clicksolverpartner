@@ -118,12 +118,13 @@ const ServiceBookingOngoingItem = () => {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         {/* Header */}
-        <View style={styles.header}>
+        <View style={styles.header} onPress={() => navigation.goBack()}>
           <Icon
             name="arrow-left-long"
             size={20}
             color={isDarkMode ? '#fff' : '#212121'}
             style={styles.backIcon}
+            onPress={() => navigation.goBack()}
           />
           <Text style={styles.headerText}>Service Trackings</Text>
         </View>

@@ -1,4 +1,5 @@
 import React from 'react';
+
 import {
   View,
   Text,
@@ -9,6 +10,7 @@ import {
   useWindowDimensions,
   Linking,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../context/ThemeContext';
 
@@ -44,6 +46,7 @@ const WorkerHelpScreen = () => {
   const { width } = useWindowDimensions();
   const { isDarkMode } = useTheme();
   const styles = dynamicStyles(width, isDarkMode);
+    const navigation = useNavigation();
 
   // Function to handle when a section is pressed
   const handleSectionPress = (sectionTitle) => {
@@ -77,13 +80,13 @@ const WorkerHelpScreen = () => {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() =>navigation.goBack() }>
           <Ionicons name="arrow-back" size={24} color={isDarkMode ? '#fff' : '#212121'} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Help & Support</Text>
         <TouchableOpacity>
           <Ionicons name="chatbubble-ellipses-outline" size={24} color="#ff4500" />
-        </TouchableOpacity>
+        </TouchableOpacity> 
       </View>
 
       {/* Content */}

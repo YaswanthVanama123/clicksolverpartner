@@ -159,7 +159,7 @@ const ProfileChange = () => {
         navigation.replace('Login');
       }
       const response = await axios.post(
-        `http://192.168.55.106:5000/api/profile/changes/submit`,
+        `https://backend.clicksolver.com/api/profile/changes/submit`,
         {formData,selectedStatus},
         {
           headers: {

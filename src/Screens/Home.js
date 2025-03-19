@@ -15,6 +15,16 @@ Mapbox.setAccessToken(
   'pk.eyJ1IjoieWFzd2FudGh2YW5hbWEiLCJhIjoiY20ybTMxdGh3MGZ6YTJxc2Zyd2twaWp2ZCJ9.uG0mVTipkeGVwKR49iJTbw',
 );
 import EncryptedStorage from 'react-native-encrypted-storage';
+import {
+  check,
+  checkMultiple,
+  request,
+  requestMultiple,
+  requestNotifications,
+  PERMISSIONS,
+  RESULTS
+} from 'react-native-permissions';
+   
 import Entypo from 'react-native-vector-icons/Entypo';
 import Octicons from 'react-native-vector-icons/Octicons';
 import AntDesign from 'react-native-vector-icons/AntDesign';
@@ -197,7 +207,49 @@ const HomeScreen = () => {
   // -----------------------------------------------
   // Toggle tracking switch
   // -----------------------------------------------
+  // const toggleSwitch = async () => {
+  //   setIsEnabled((prevState) => {
+  //     const newEnabledState = !prevState;
+  //     EncryptedStorage.setItem('trackingEnabled', JSON.stringify(newEnabledState)).catch((error) => {
+  //       console.error('Error saving enabled state:', error);
+  //     });
+  //     return newEnabledState;
+  //   });
+  // };
+
   const toggleSwitch = async () => {
+    // When turning on, verify the location permission is set to "Always"
+    if (!isEnabled) {
+      let permissionType;
+  
+      if (Platform.OS === 'ios') {
+        // iOS: check for "Always" permission
+        // permissionType = PERMISSIONS.IOS.LOCATION_ALWAYS;
+      } else {
+        // Android: background location permission is required for "all time" tracking
+        permissionType = PERMISSIONS.ANDROID.ACCESS_BACKGROUND_LOCATION;
+      }
+  
+      const currentStatus = await check(permissionType);
+      if (currentStatus !== RESULTS.GRANTED) {
+        // Request the required permission
+        const requestedStatus = await request(permissionType);
+        if (requestedStatus !== RESULTS.GRANTED) {
+          // Permission not granted, alert the user to update in settings
+          Alert.alert(
+            'Location Permission Required',
+            'Please set your location permission to "Always" in settings for tracking to work.',
+            [
+              { text: 'OK' },
+              // Optionally, you can add a button to open settings using openSettings() from react-native-permissions.
+            ]
+          );
+          return; // Do not toggle on if permission isn’t granted
+        }
+      }
+    }
+  
+    // Permission is granted, so toggle the switch and update the storage
     setIsEnabled((prevState) => {
       const newEnabledState = !prevState;
       EncryptedStorage.setItem('trackingEnabled', JSON.stringify(newEnabledState)).catch((error) => {
@@ -206,6 +258,7 @@ const HomeScreen = () => {
       return newEnabledState;
     });
   };
+  
 
   const fetchTrackingState = async () => {
     try {
@@ -269,7 +322,7 @@ const HomeScreen = () => {
         `https://backend.clicksolver.com/api/accept/request`,
         { user_notification_id: decodedId },
         { headers: { Authorization: `Bearer ${jwtToken}` } }
-      );
+      ); 
 
       if (response.status === 200) {
         // Remove the accepted notification
@@ -1186,7 +1239,7 @@ function dynamicStyles(width, height, isDarkMode) {
     },
     messageBox: {
       width: width * 0.85,
-      height: isTablet ? 240 : 220,
+      height: isTablet ? 260 : 240,
       backgroundColor: isDarkMode ? '#222222' : '#fff',
       marginRight: width * 0.05,
       borderRadius: 10,

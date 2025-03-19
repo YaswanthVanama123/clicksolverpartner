@@ -10,7 +10,6 @@ import {
   Alert,
   Dimensions,
   BackHandler,
-  
 } from 'react-native';
 import FontAwesome6 from 'react-native-vector-icons/FontAwesome6';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -46,21 +45,19 @@ const BankAccountScreen = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-    // This useEffect handles the hardware back button on Android
+  // Handle the hardware back button on Android
   useEffect(() => {
-      const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
-        navigation.goBack();
-        return true; // Return true to prevent default behavior (app exit)
-      });
-  
-      return () => {
-        backHandler.remove();
-      };
-    }, [navigation]);
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      navigation.goBack();
+      return true; // Prevent default behavior (app exit)
+    });
+    return () => {
+      backHandler.remove();
+    };
+  }, [navigation]);
 
   const onBankPress = () => {
-    console.log("hi back")
-    navigation.goBack(); // Navigate back on custom back button press
+    navigation.goBack();
   };
 
   const handleAddBankAccount = async () => {
@@ -117,6 +114,9 @@ const BankAccountScreen = () => {
           </View>
         </View>
         <Text style={styles.bankAccountDetailsText}>Bank account details</Text>
+        <Text style={styles.disclaimerText}>
+          Note: We do not store your bank details. They are securely sent to Razorpay for payout processing.
+        </Text>
         <View style={styles.form}>
           <View style={styles.inputContainer}>
             <TextInput
@@ -205,7 +205,7 @@ const BankAccountScreen = () => {
             <Text style={styles.learnMoreText}>Learn more</Text>
           </Text>
           <Text style={styles.acceptTerms}>
-            By adding this bank account, I agree to PayMe T& Cs regarding topping up from bank account.
+            By adding this bank account, I agree to PayMe T&Cs regarding topping up from bank account.
           </Text>
           <TouchableOpacity style={styles.button} onPress={handleAddBankAccount}>
             <Text style={styles.buttonText}>Add bank account</Text>
@@ -235,6 +235,13 @@ function dynamicStyles(isDarkMode) {
       fontWeight: 'bold',
       color: isDarkMode ? '#ffffff' : '#212121',
       fontSize: 23,
+      textAlign: 'center',
+    },
+    disclaimerText: {
+      fontSize: 14,
+      color: 'gray',
+      textAlign: 'center',
+      marginBottom: 20,
     },
     header: {
       flexDirection: 'row',

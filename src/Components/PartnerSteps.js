@@ -268,7 +268,7 @@ const PartnerSteps = () => {
               </View>
 
               {/* UPI ID Option */}
-              <View style={styles.optionContainer}>
+              {/* <View style={styles.optionContainer}>
                 <TouchableOpacity
                   style={styles.optionRow}
                   onPress={() => setSelectedBankOption('upiId')}
@@ -293,7 +293,7 @@ const PartnerSteps = () => {
                   )}
                 </TouchableOpacity>
 
-                {/* Proceed button for UPI ID */}
+      
                 {selectedBankOption === 'upiId' && !upiIdAdded && (
                   <TouchableOpacity
                     style={styles.proceedButton}
@@ -304,7 +304,7 @@ const PartnerSteps = () => {
                     <Text style={styles.proceedButtonText}>Proceed</Text>
                   </TouchableOpacity>
                 )}
-              </View>
+              </View> */}
             </View>
           )}
         </TouchableOpacity>

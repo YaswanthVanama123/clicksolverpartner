@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { useNavigation } from '@react-navigation/native';
 import EncryptedStorage from 'react-native-encrypted-storage';
 import axios from 'axios';
 import uuid from 'react-native-uuid';
@@ -117,6 +118,7 @@ const RatingsScreen = () => {
   const { isDarkMode } = useTheme();
   // Pass isDarkMode to dynamicStyles so colors update accordingly.
   const styles = dynamicStyles(width, isDarkMode);
+  const navigation = useNavigation()
 
   const [reviews, setReviews] = useState([]);
   const [workerReview, setWorkerReview] = useState({});
@@ -231,7 +233,9 @@ const RatingsScreen = () => {
     return (
       <View style={styles.mainContainer}>
         <View style={styles.headerContainer}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
           <Icon name="arrow-back" size={24} color={isDarkMode ? "#ffffff" : "#000"} style={{ marginRight: 10 }} />
+          </TouchableOpacity>
           <Text style={styles.headerTitle}>Rating Screen</Text>
         </View>
         <View style={styles.noDataContainer}>
@@ -244,7 +248,9 @@ const RatingsScreen = () => {
   return (
     <View style={styles.mainContainer}>
       <View style={styles.headerContainer}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
         <Icon name="arrow-back" size={24} color={isDarkMode ? "#ffffff" : "#000"} style={{ marginRight: 10 }} />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>Rating Screen</Text>
       </View>
       <FlatList

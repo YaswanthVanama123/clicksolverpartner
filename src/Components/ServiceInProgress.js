@@ -151,29 +151,29 @@ const ServiceInProgressScreen = () => {
   };
 
   // Handle service completion
-  const handleServiceCompletion = async () => {
-    try {
-      await axios.post(`https://backend.clicksolver.com/api/worker/update/status`, {
-        decodedId,
-        statusKey: 'workCompleted',
-        newStatusValue: statusDisplayNames['workCompleted'],
-      });
-      setServices(prevServices =>
-        prevServices.map(service => {
-          if (service.id === editingServiceId) {
-            const updatedStatus = { ...service.status };
-            updatedStatus.workCompleted = statusDisplayNames['workCompleted'];
-            return { ...service, status: updatedStatus };
-          }
-          return service;
-        })
-      );
-      Alert.alert('Service Completed', 'You have marked the service as completed.');
-    } catch (error) {
-      console.error('Error updating service completion:', error);
-      Alert.alert('Error', 'Failed to update service completion.');
-    }
-  };
+  // const handleServiceCompletion = async () => {
+  //   try {
+  //     await axios.post(`https://backend.clicksolver.com/api/worker/update/status`, {
+  //       decodedId,
+  //       statusKey: 'workCompleted',
+  //       newStatusValue: statusDisplayNames['workCompleted'],
+  //     });
+  //     setServices(prevServices =>
+  //       prevServices.map(service => {
+  //         if (service.id === editingServiceId) {
+  //           const updatedStatus = { ...service.status };
+  //           updatedStatus.workCompleted = statusDisplayNames['workCompleted'];
+  //           return { ...service, status: updatedStatus };
+  //         }
+  //         return service;
+  //       })
+  //     );
+  //     Alert.alert('Service Completed', 'You have marked the service as completed.');
+  //   } catch (error) {
+  //     console.error('Error updating service completion:', error);
+  //     Alert.alert('Error', 'Failed to update service completion.');
+  //   }
+  // };
 
   // Edit button press handler
   const handleEditPress = serviceId => {
@@ -336,7 +336,7 @@ const ServiceInProgressScreen = () => {
         );
         console.log('Response:', response);
         if (response.status === 201) {
-          navigation.dispatch(
+          navigation.dispatch( 
             CommonActions.reset({
               index: 0,
               routes: [{ name: 'Tabs', state: { routes: [{ name: 'Home' }] } }],
@@ -952,14 +952,14 @@ const dynamicStyles = isDarkMode =>
       backgroundColor: isDarkMode ? '#444444' : '#FFFFFF',
     },
     placeholderStyle: {
-      color: isDarkMode ? '#ffffff' : '#212121',
+      color: isDarkMode ? '#212121' : '#212121',
     },
     selectedTextStyle: {
       color: isDarkMode ? '#ffffff' : '#212121',
     },
     itemTextStyle: {
       fontSize: 16,
-      color: isDarkMode ? '#ffffff' : '#212121',
+      color: isDarkMode ? '#212121' : '#212121',
       fontWeight: '500',
     },
     uploadContainer: {

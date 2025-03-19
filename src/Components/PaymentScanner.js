@@ -51,6 +51,8 @@ const PaymentScanner = ({ route }) => {
     }
   }, [route.params]);
 
+  
+
   useEffect(() => {
     const fetchPaymentDetails = async () => {
       if (decodedId) {
@@ -156,7 +158,9 @@ const PaymentScanner = ({ route }) => {
 
         <View style={styles.qrContainer}>
           <Image
-            source={{ uri: 'https://i.postimg.cc/3RDzkGDh/Image-3.png' }}
+            // source={{ uri: 'https://i.postimg.cc/3RDzkGDh/Image-3.png' }}
+            source={{ uri: 'https://i.postimg.cc/vB0sXKjj/DALL-E-2025-03-17-18-08-17-A-fully-blurred-QR-code-making-it-completely-unreadable-with-a-strong.png' }}
+            
             style={styles.ScannerImage}
           />
           <Text style={styles.qrText}>Scan QR code to pay</Text>
@@ -267,12 +271,12 @@ function dynamicStyles(width, isDarkMode) {
     },
     qrContainer: {
       alignItems: 'center',
-      marginBottom: isTablet ? 30 : 20,
+      marginBottom: isTablet ? 20 : 10,
     },
     ScannerImage: {
-      width: isTablet ? 200 : 150,
-      height: isTablet ? 200 : 150,
-      marginTop: isTablet ? 30 : 20,
+      width: isTablet ? 200 : 180,
+      height: isTablet ? 200 : 180,
+      marginTop: isTablet ? 10 : 5,
     },
     qrText: {
       marginTop: 10,
