@@ -19,14 +19,17 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation, CommonActions, useFocusEffect } from '@react-navigation/native';
 import { useWindowDimensions } from 'react-native';
-import messaging from '@react-native-firebase/messaging'; // Firebase messaging for react-native-cli
+import messaging from '@react-native-firebase/messaging';
 import { useTheme } from '../context/ThemeContext';
+// Import translation hook
+import { useTranslation } from 'react-i18next';
 
 const ApprovalStatusScreen = () => {
   const { width } = useWindowDimensions();
   const { isDarkMode } = useTheme();
   const styles = dynamicStyles(width, isDarkMode);
-  
+  const { t } = useTranslation();
+
   const [profile, setProfile] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [showLogout, setShowLogout] = useState(false);
@@ -40,10 +43,10 @@ const ApprovalStatusScreen = () => {
   const navigation = useNavigation();
 
   const statuses = [
-    'Mobile Number Verified',
-    'Details Verified',
-    'Profile and Proof Verified',
-    'Bank account Verified',
+    t('mobile_verified', 'Mobile Number Verified'),
+    t('details_verified', 'Details Verified'),
+    t('profile_proof_verified', 'Profile and Proof Verified'),
+    t('bank_verified', 'Bank account Verified'),
   ];
 
   // Function to fetch approval details from backend
@@ -51,7 +54,7 @@ const ApprovalStatusScreen = () => {
     try {
       const pcs_token = await EncryptedStorage.getItem('pcs_token');
       if (!pcs_token) {
-        throw new Error('PCS token is missing.');
+        throw new Error(t('token_missing', 'PCS token is missing.'));
       }
       const response = await axios.post(
         'https://backend.clicksolver.com/api/check/approval/verification/status',
@@ -62,7 +65,7 @@ const ApprovalStatusScreen = () => {
           },
         },
       );
-      console.log("status",response.status)
+
       if (response.status === 201) {
         await EncryptedStorage.setItem('verification', 'true');
         navigation.dispatch(
@@ -73,7 +76,6 @@ const ApprovalStatusScreen = () => {
         );
       } else if (response.status === 200) {
         const { data } = response;
-        console.log(data);
         setProfile(data.profile);
         setUserName(data.name || '');
         setUserService(data.service || '');
@@ -81,8 +83,8 @@ const ApprovalStatusScreen = () => {
         setIssues(Array.isArray(data.issues) ? data.issues : []);
       }
     } catch (error) {
-      console.error('Error fetching approval status data:', error);
-      setIssues([]); // Reset issues on error
+      console.error(t('error_fetching_approval', 'Error fetching approval status data:'), error);
+      setIssues([]);
     }
   };
 
@@ -98,7 +100,7 @@ const ApprovalStatusScreen = () => {
     const unsubscribe = messaging().onMessage(async remoteMessage => {
       console.log('FCM notification received in ApprovalStatusScreen:', remoteMessage);
       if (remoteMessage.data && remoteMessage.data.screen === "ApprovalScreen") {
-        console.log('Notification data.screen equals "ApprovalScreen". Refreshing data...');
+        console.log('Notification for ApprovalScreen received. Refreshing data...');
         fetchApprovalDetails();
       }
     });
@@ -143,18 +145,18 @@ const ApprovalStatusScreen = () => {
       await EncryptedStorage.removeItem('fcm_token');
       navigation.replace('Login');
     } catch (error) {
-      console.error('Error during logout:', error);
+      console.error(t('error_logout', 'Error during logout:'), error);
     }
   };
 
   const handleSetupChange = () => {
     if (selectedStatus) {
       if (
-        selectedStatus === 'Details Verified' ||
-        selectedStatus === 'Profile and Proof Verified'
+        selectedStatus === t('details_verified', 'Details Verified') ||
+        selectedStatus === t('profile_proof_verified', 'Profile and Proof Verified')
       ) {
         navigation.push('WorkerProfile', { selectedStatus });
-      } else if (selectedStatus === 'Bank account Verified') {
+      } else if (selectedStatus === t('bank_verified', 'Bank account Verified')) {
         navigation.push('BankAccountScreen', { selectedStatus });
       }
     }
@@ -202,10 +204,10 @@ const ApprovalStatusScreen = () => {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.headerContainer}>
-        <Text style={styles.headerText}>Approval Status</Text>
+        <Text style={styles.headerText}>{t('approval_status', 'Approval Status')}</Text>
         <View style={styles.headerIcons}>
           <TouchableOpacity onPress={openHelpModal}>
-            <Text style={styles.helpText}>Help</Text>
+            <Text style={styles.helpText}>{t('help', 'Help')}</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={toggleLogout}>
             <Icon name="more-vert" size={24} color={isDarkMode ? '#dddddd' : '#1D2951'} />
@@ -213,7 +215,7 @@ const ApprovalStatusScreen = () => {
         </View>
         {showLogout && (
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <Text style={styles.logoutText}>Logout</Text>
+            <Text style={styles.logoutText}>{t('logout', 'Logout')}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -236,19 +238,17 @@ const ApprovalStatusScreen = () => {
           </View>
         </View>
         <Text style={styles.statusText}>
-          Your profile is under review by the administrator.
+          {t('profile_under_review', 'Your profile is under review by the administrator.')}
         </Text>
         {/* Refresh Icon */}
         <TouchableOpacity style={styles.refreshContainer} onPress={handleRefreshStatus}>
           <Animated.View style={{ transform: [{ rotate: spin }] }}>
             <Icon name="refresh" size={24} color={isDarkMode ? '#1D2951' : '#1D2951'} />
           </Animated.View>
-          <Text style={styles.refreshText}>Refresh Status</Text>
+          <Text style={styles.refreshText}>{t('refresh_status', 'Refresh Status')}</Text>
         </TouchableOpacity>
 
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}>
           <View style={styles.innerContainerLine}>
             {getTimelineData.map((item, index) => (
               <View key={index} style={styles.timelineItem}>
@@ -260,12 +260,7 @@ const ApprovalStatusScreen = () => {
                     style={styles.timelineIcon}
                   />
                   {index !== getTimelineData.length - 1 && (
-                    <View
-                      style={[
-                        styles.lineSegment,
-                        { backgroundColor: item.lineColor },
-                      ]}
-                    />
+                    <View style={[styles.lineSegment, { backgroundColor: item.lineColor }]} />
                   )}
                 </View>
                 <View style={styles.timelineTextContainer}>
@@ -287,7 +282,7 @@ const ApprovalStatusScreen = () => {
           {/* Display Issues */}
           {pendingIssues.length > 0 && (
             <View style={styles.issuesContainer}>
-              <Text style={styles.issuesTitle}>Pending Issues:</Text>
+              <Text style={styles.issuesTitle}>{t('pending_issues', 'Pending Issues:')}</Text>
               {pendingIssues.map((issue, index) => (
                 <Text key={index} style={styles.issueText}>
                   • {issue.description}
@@ -298,7 +293,7 @@ const ApprovalStatusScreen = () => {
 
           {changedIssues.length > 0 && (
             <View style={styles.issuesContainer}>
-              <Text style={styles.issuesTitle}>Resolved Issues:</Text>
+              <Text style={styles.issuesTitle}>{t('resolved_issues', 'Resolved Issues:')}</Text>
               {changedIssues.map((issue, index) => (
                 <Text key={index} style={styles.issueText}>
                   • {issue.description}
@@ -308,23 +303,20 @@ const ApprovalStatusScreen = () => {
           )}
 
           <Text style={styles.noteText}>
-            Please check back later or modify your profile if any issues are reported.
+            {t('check_back_later', 'Please check back later or modify your profile if any issues are reported.')}
           </Text>
           <TouchableOpacity
-            style={[
-              styles.setupChangeButton,
-              { opacity: isSetupChangeEnabled ? 1 : 0.5 }
-            ]}
+            style={[styles.setupChangeButton, { opacity: isSetupChangeEnabled ? 1 : 0.5 }]}
             onPress={handleSetupChange}
             disabled={!isSetupChangeEnabled}
           >
-            <Text style={styles.setupChangeText}>Setup Change</Text>
+            <Text style={styles.setupChangeText}>{t('setup_change', 'Setup Change')}</Text>
           </TouchableOpacity>
         </ScrollView>
       </View>
 
       {/* Floating Call Icon */}
-      <TouchableOpacity style={styles.floatingButton} onPress={handleCall}>
+      <TouchableOpacity style={styles.floatingButton} onPress={() => Linking.openURL('tel:7981793632')}>
         <Icon name="call" size={24} color="#fff" />
       </TouchableOpacity>
 
@@ -339,14 +331,14 @@ const ApprovalStatusScreen = () => {
           <View style={styles.modalContainer}>
             <TouchableOpacity style={styles.helpOptionButton} onPress={handleCall}>
               <Icon name="call" size={20} color="#fff" />
-              <Text style={styles.helpOptionText}>Call Us</Text>
+              <Text style={styles.helpOptionText}>{t('call_us', 'Call Us')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.helpOptionButton} onPress={handleEmail}>
               <Icon name="mail" size={20} color="#fff" />
-              <Text style={styles.helpOptionText}>Email Us</Text>
+              <Text style={styles.helpOptionText}>{t('email_us', 'Email Us')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.cancelButton} onPress={closeHelpModal}>
-              <Text style={styles.helpOptionText}>Cancel</Text>
+              <Text style={styles.helpOptionText}>{t('cancel', 'Cancel')}</Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>

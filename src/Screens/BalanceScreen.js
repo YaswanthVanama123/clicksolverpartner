@@ -15,13 +15,15 @@ import { useNavigation, CommonActions } from '@react-navigation/native';
 import axios from 'axios';
 import EncryptedStorage from 'react-native-encrypted-storage';
 import RazorpayCheckout from 'react-native-razorpay';
-// Import the theme hook
+import { ActivityIndicator } from 'react-native-paper';
 import { useTheme } from '../context/ThemeContext';
+// Import translation hook
+import { useTranslation } from 'react-i18next';
 
-/** 
- * Helper function to compute relative time (e.g. "Just now", "3 hours ago", "Yesterday", etc.).
+/**
+ * Helper function to compute relative time using the translation function.
  */
-function getRelativeTime(dateString) {
+function getRelativeTime(dateString, t) {
   const now = new Date();
   const then = new Date(dateString);
   const diffMs = now - then;
@@ -30,18 +32,19 @@ function getRelativeTime(dateString) {
   const diffHours = Math.floor(diffMin / 60);
   const diffDays = Math.floor(diffHours / 24);
 
-  if (diffMin < 1) return 'Just now';
-  if (diffHours < 1) return `${diffMin} minute${diffMin > 1 ? 's' : ''} ago`;
-  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-  if (diffDays === 1) return 'Yesterday';
+  if (diffMin < 1) return t('just_now') || 'Just now';
+  if (diffHours < 1) return t('minutes_ago', { count: diffMin }) || `${diffMin} minute${diffMin > 1 ? 's' : ''} ago`;
+  if (diffHours < 24) return t('hours_ago', { count: diffHours }) || `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+  if (diffDays === 1) return t('yesterday') || 'Yesterday';
   return then.toDateString();
 }
 
-const BalanceScreen = () => { 
+const BalanceScreen = () => {
   const { width } = useWindowDimensions();
   const { isDarkMode } = useTheme();
   const styles = dynamicStyles(width, isDarkMode);
   const navigation = useNavigation();
+  const { t } = useTranslation();
 
   const [balance, setBalance] = useState(null);
   const [transactions, setTransactions] = useState([]); // Service Charge data
@@ -55,29 +58,29 @@ const BalanceScreen = () => {
     try {
       const pcs_token = await EncryptedStorage.getItem('pcs_token');
       if (!pcs_token) throw new Error('User not authenticated');
-  
+
       const response = await axios.post(
         'https://backend.clicksolver.com/api/balance/ammount',
         {},
-        { headers: { Authorization: `Bearer ${pcs_token}` } } 
+        { headers: { Authorization: `Bearer ${pcs_token}` } }
       );
-  
+
       // The first object in response.data is the main balance info
       const data = response.data[0];
       setDummyTransactions(data.balance_payment_history || []);
       setBalance(data.balance_amount);
-  
+
       // Build Service Charge array from entire 'response.data'
       const serviceBalanceHistory = response.data.map((transaction, index) => {
         const paymentType = transaction.payment_type ? transaction.payment_type.toLowerCase() : 'unknown';
         const paymentValue = Number(transaction.payment);
-      
+
         // Example deduction logic
         const deduction =
           paymentType === 'cash'
             ? paymentValue * 0.12
             : paymentValue * 0.88;
-      
+
         const amount = `${paymentType === 'cash' ? '-' : '+'} ₹${deduction.toFixed(2)}`;
         const dateObject = new Date(transaction.end_time);
         const formattedTime = dateObject.toLocaleDateString([], {
@@ -85,19 +88,18 @@ const BalanceScreen = () => {
           month: 'short',
           year: 'numeric',
         });
-      
-        return { 
+
+        return {
           id: index.toString(),
           amount,
           time: formattedTime,
           timestamp: dateObject.getTime(),
-          service: 'Electrician',
-          payment: paymentType === 'cash' ? 'Paid by Cash' : 'Paid to Click Solver',
+          service: t('electrician') || 'Electrician',
+          payment: paymentType === 'cash' ? t('paid_by_cash') || 'Paid by Cash' : t('paid_to_clicksolver') || 'Paid to Click Solver',
           name: transaction.name,
         };
       });
-      
-  
+
       // Sort service charges by timestamp in descending order
       serviceBalanceHistory.sort((a, b) => b.timestamp - a.timestamp);
       setTransactions(serviceBalanceHistory);
@@ -106,8 +108,8 @@ const BalanceScreen = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
-  
+  }, [t]);
+
   useEffect(() => {
     fetchServiceBalanceHistory();
   }, [fetchServiceBalanceHistory]);
@@ -132,7 +134,7 @@ const BalanceScreen = () => {
 
       // Open Razorpay Checkout
       const options = {
-        description: 'Payment for clearing negative balance',
+        description: t('payment_description') || 'Payment for clearing negative balance',
         currency: data.currency,
         key: 'rzp_test_vca9xUL1SxWrEM', // Replace with your actual key
         amount: data.amount, // in paise
@@ -163,9 +165,10 @@ const BalanceScreen = () => {
         })
         .catch((error) => {
           // Handle Razorpay errors
+          console.error('Razorpay error:', error);
         });
     } catch (error) {
-      // Handle errors
+      console.error('Error in payment process:', error);
     }
   };
 
@@ -203,12 +206,12 @@ const BalanceScreen = () => {
 
   // Payment History Card
   const renderPaymentHistoryItem = ({ item }) => {
-    const lowerPaid = item.paid.toLowerCase();
+    const lowerPaid = (item.paid || '').toLowerCase();
     const isReceived = lowerPaid.includes('paid by click solver') || lowerPaid.includes('received');
-    const mainText = isReceived ? `Received from Click Solver` : `Paid to Click Solver`;
+    const mainText = isReceived ? t('received_from_clicksolver') || 'Received from Click Solver' : t('paid_to_clicksolver') || 'Paid to Click Solver';
     const iconName = isReceived ? 'arrow-bottom-left' : 'arrow-top-right';
     const iconBg = isReceived ? '#4CAF50' : '#FF5722';
-    const timeString = getRelativeTime(item.time);
+    const timeString = getRelativeTime(item.time, t);
 
     return (
       <View style={styles.historyItemContainer}>
@@ -249,7 +252,7 @@ const BalanceScreen = () => {
           </TouchableOpacity>
         </View>
         <View style={styles.balanceContainer}>
-          <Text style={styles.balanceTitle}>Balance</Text>
+          <Text style={styles.balanceTitle}>{t('balance') || 'Balance'}</Text>
           <Text style={[styles.balanceAmount, balance !== null && Number(balance) < 0 && styles.negativeBalance]}>
             ₹{balance ?? 0}
           </Text>
@@ -260,7 +263,7 @@ const BalanceScreen = () => {
             onPress={() => setActiveCard('ServiceHistory')}
           >
             <Text style={[styles.cardText, activeCard === 'ServiceHistory' && styles.activeCardText]}>
-              Service Charge
+              {t('service_charge') || 'Service Charge'}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -268,7 +271,7 @@ const BalanceScreen = () => {
             onPress={() => setActiveCard('TransactionHistory')}
           >
             <Text style={[styles.cardText, activeCard === 'TransactionHistory' && styles.activeCardText]}>
-              Payment History
+              {t('payment_history') || 'Payment History'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -277,15 +280,12 @@ const BalanceScreen = () => {
       {/* Main Content Section */}
       <View style={styles.scrollContainer}>
         {loading ? (
-          <LottieView
-            source={require('../assets/success.json')}
-            autoPlay
-            loop
-            style={styles.loadingAnimation}
-          />
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#ff5722" />
+          </View>
         ) : activeCard === 'ServiceHistory' ? (
           transactions.length === 0 ? (
-            renderNoData('No service history data available.')
+            renderNoData(t('no_service_history') || 'No service history data available.')
           ) : (
             <FlatList
               data={transactions}
@@ -295,7 +295,7 @@ const BalanceScreen = () => {
             />
           )
         ) : dummyTransactions.length === 0 ? (
-          renderNoData('No payment history data available.')
+          renderNoData(t('no_payment_history') || 'No payment history data available.')
         ) : (
           <FlatList
             data={dummyTransactions}
@@ -307,19 +307,16 @@ const BalanceScreen = () => {
       </View>
 
       {/* Show Pay Now Button if Balance is Negative */}
-      {isBalanceNegative && (
+      {Number(balance) < 0 && (
         <TouchableOpacity style={styles.payNowButton} onPress={handlePayNow}>
-          <Text style={styles.payNowButtonText}>Pay Now</Text>
+          <Text style={styles.payNowButtonText}>{t('pay_now') || 'Pay Now'}</Text>
         </TouchableOpacity>
       )}
     </SafeAreaView>
   );
 };
 
-/**
- * Dynamic styles generator that accepts screen width and current theme.
- */
-function dynamicStyles(width, isDarkMode) {
+const dynamicStyles = (width, isDarkMode) => {
   const isTablet = width >= 600;
   return StyleSheet.create({
     container: {
@@ -387,12 +384,13 @@ function dynamicStyles(width, isDarkMode) {
       flex: 1,
       marginTop: isTablet ? 15 : 10,
     },
-    loadingAnimation: {
-      width: '100%',
-      height: isTablet ? 250 : 200,
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     flatlistContainer: {
-      paddingBottom: 20,
+      paddingBottom: isTablet ? 30 : 20,
     },
     noDataContainer: {
       flex: 1,
@@ -400,11 +398,12 @@ function dynamicStyles(width, isDarkMode) {
       alignItems: 'center',
     },
     noDataText: {
+      marginTop: 8,
       fontSize: isTablet ? 18 : 16,
       color: isDarkMode ? '#ffffff' : '#999',
       fontWeight: 'bold',
     },
-    // Service History styling
+    /* CARD LAYOUT */
     transactionContainer: {
       backgroundColor: isDarkMode ? '#222222' : '#FFFFFF',
       borderRadius: 15,
@@ -457,7 +456,7 @@ function dynamicStyles(width, isDarkMode) {
       marginTop: 8,
       textAlign: 'right',
     },
-    // Pay Now button
+    /* Pay Now button */
     payNowButton: {
       position: 'absolute',
       bottom: isTablet ? 30 : 20,
@@ -475,7 +474,7 @@ function dynamicStyles(width, isDarkMode) {
       fontSize: isTablet ? 18 : 16,
       fontWeight: 'bold',
     },
-    // Payment History styling
+    /* Payment History styling */
     historyItemContainer: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -529,6 +528,6 @@ function dynamicStyles(width, isDarkMode) {
       maxWidth: 120,
     },
   });
-}
+};
 
 export default BalanceScreen;

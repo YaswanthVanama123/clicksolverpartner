@@ -230,7 +230,7 @@ const WorkerTimer = () => {
             workedTime = startTimeData[matchingIndex].worked_time;
           } else {
             const response = await axios.post(
-              `http://192.168.55.105:5000/api/work/time/started`,
+              `https://backend.clicksolver.com/api/work/time/started`,
               {
                 notification_id: decodedId,
               },

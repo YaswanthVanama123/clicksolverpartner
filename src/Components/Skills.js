@@ -24,36 +24,36 @@ import axios from 'axios';
 import EncryptedStorage from 'react-native-encrypted-storage';
 import { useNavigation } from '@react-navigation/native';
 import uuid from 'react-native-uuid';
-// Import the theme hook
 import { useTheme } from '../context/ThemeContext';
+// Import translation hook
+import { useTranslation } from 'react-i18next';
 
 const RegistrationScreen = () => {
   const { width } = useWindowDimensions();
-  // Get the dark/light mode flag from context
   const { isDarkMode } = useTheme();
-  // Pass isDarkMode to our dynamic styles generator
   const styles = dynamicStyles(width, isDarkMode);
+  const { t } = useTranslation();
 
   // State declarations
   const [subServices, setSubServices] = useState([]);
   const [titleColor, setTitleColor] = useState('#FF5722');
   const [errorFields, setErrorFields] = useState({});
   const [educationItems] = useState([
-    { label: 'High School', value: 'highschool' },
-    { label: "Bachelor's", value: 'bachelor' },
-    { label: "Master's", value: 'master' },
+    { label: t('high_school', 'High School'), value: 'highschool' },
+    { label: t('bachelors', "Bachelor's"), value: 'bachelor' },
+    { label: t('masters', "Master's"), value: 'master' },
   ]);
   const [swiped, setSwiped] = useState(false);
   const [experienceItems] = useState([
-    { label: '0-1 Year', value: '0-1' },
-    { label: '1-3 years', value: '1-3' },
-    { label: 'more than 3 years', value: '3+' },
+    { label: t('0_1_year', '0-1 Year'), value: '0-1' },
+    { label: t('1_3_years', '1-3 years'), value: '1-3' },
+    { label: t('more_than_3_years', 'more than 3 years'), value: '3+' },
   ]);
-  const navigation = useNavigation();
+  const constNavigation = useNavigation();
   const [skillCategoryItems, setSkillCategoryItems] = useState([
-    { label: 'Electrician', value: 'electrician' },
-    { label: 'Plumber', value: 'plumber' },
-    { label: 'Carpenter', value: 'carpenter' },
+    { label: t('electrician', 'Electrician'), value: 'electrician' },
+    { label: t('plumber', 'Plumber'), value: 'plumber' },
+    { label: t('carpenter', 'Carpenter'), value: 'carpenter' },
   ]);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [formData, setFormData] = useState({
@@ -145,7 +145,7 @@ const RegistrationScreen = () => {
     }
     if (Object.keys(errors).length > 0) {
       setErrorFields(errors);
-      Alert.alert('Error', 'Please fill all the required fields.');
+      Alert.alert(t('error', 'Error'), t('fill_required', 'Please fill all the required fields.'));
       setLoading(false);
       return;
     }
@@ -153,10 +153,10 @@ const RegistrationScreen = () => {
       const pcsToken = await EncryptedStorage.getItem('pcs_token');
       if (!pcsToken) {
         console.error('No pcs_token found.');
-        navigation.replace('Login');
+        constNavigation.replace('Login');
       }
       const response = await axios.post(
-        `https://backend.clicksolver.com/api/registration/submit`,
+        'https://backend.clicksolver.com/api/registration/submit',
         formData,
         {
           headers: {
@@ -180,10 +180,10 @@ const RegistrationScreen = () => {
       const pcsToken = await EncryptedStorage.getItem('pcs_token');
       if (!pcsToken) {
         console.error('No pcs_token found.');
-        navigation.replace('Login');
+        constNavigation.replace('Login');
       }
       const response = await axios.get(
-        `https://backend.clicksolver.com/api/service/categories`,
+        'https://backend.clicksolver.com/api/service/categories',
         {
           headers: {
             Authorization: `Bearer ${pcsToken}`,
@@ -195,8 +195,9 @@ const RegistrationScreen = () => {
       }
       const data = response.data;
       const mappedData = data.map((item) => ({
-        label: item.service_name,
-        value: item.service_name,
+        label: t(`service_${item.service_id}`, item.service_name), // display translated name
+        value: item.service_name, // original English name to send
+        id: item.service_id,
       }));
       setSkillCategoryItems(mappedData);
     } catch (error) {
@@ -226,7 +227,7 @@ const RegistrationScreen = () => {
         }
       }
       console.log('Logout successful, all necessary storage items removed.');
-      navigation.replace('Login');
+      constNavigation.replace('Login');
     } catch (error) {
       console.error('Error logging out:', error);
     }
@@ -243,7 +244,7 @@ const RegistrationScreen = () => {
         console.log('User cancelled image picker'); 
       } else if (response.error) {
         console.error('ImagePicker Error: ', response.error);
-        Alert.alert('Error', 'Failed to pick image.');
+        Alert.alert(t('error', 'Error'), t('image_pick_error', 'Failed to pick image.'));
       } else if (response.assets) {
         const { uri } = response.assets[0];
         try {
@@ -251,7 +252,7 @@ const RegistrationScreen = () => {
           console.log('Uploaded Image URL:', imageUrl);
           handleInputChange(fieldName, imageUrl);
         } catch (error) {
-          Alert.alert('Error', 'Failed to upload image.');
+          Alert.alert(t('error', 'Error'), t('image_upload_error', 'Failed to upload image.'));
           console.error(error);
         }
       }
@@ -263,11 +264,11 @@ const RegistrationScreen = () => {
       const pcsToken = await EncryptedStorage.getItem('pcs_token');
       if (!pcsToken) {
         console.error('No pcs_token found.');
-        navigation.replace('Login');
+        constNavigation.replace('Login');
         return;
       }
       const response = await axios.get(
-        `https://backend.clicksolver.com/api/profile/detsils`,
+        'https://backend.clicksolver.com/api/profile/detsils',
         {
           headers: {
             Authorization: `Bearer ${pcsToken}`,
@@ -296,7 +297,7 @@ const RegistrationScreen = () => {
       }));
       setPhoneNumber(data.phone_number);
       const subserviceResponse = await axios.post(
-        `https://backend.clicksolver.com/api/subservice/checkboxes`,
+        'https://backend.clicksolver.com/api/subservice/checkboxes',
         { selectedService: data.service },
         {
           headers: {
@@ -308,7 +309,9 @@ const RegistrationScreen = () => {
       const mappedData = subserviceData.map((item) => ({
         id: item.service_id,
         label: item.service_tag,
-        category: item.service_category,
+        tag: t(`singleService_${item.main_service_id}`, ),
+        category: item.service_category, 
+        value: t(`IndivService_${item.service_id}`, item.service_tag)
       }));
       setSubServices(mappedData);
     } catch (error) {
@@ -339,16 +342,14 @@ const RegistrationScreen = () => {
   return (
     <View style={styles.container}>
       {loading && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#FF5722" />
-        </View>
+        <ActivityIndicator size="large" color="#FF5722" style={{ marginVertical: 20 }} />
       )}
 
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <AntDesign name="arrowleft" size={24} color={isDarkMode ? "#ffffff" : "#333"} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle} >Profile</Text>
+        <Text style={styles.headerTitle}>{t('profile', 'Profile')}</Text>
         <TouchableOpacity onPress={handleEdit} style={styles.editButton}>
           <Feather name="edit" size={24} color={isDarkMode ? "#ffffff" : "#333"} />
         </TouchableOpacity>
@@ -357,8 +358,8 @@ const RegistrationScreen = () => {
       <ScrollView style={styles.scrollContainer}>
         {/* Personal Details Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Personal Details</Text>
-          <Text style={styles.label}>First Name</Text>
+          <Text style={styles.sectionTitle}>{t('personal_details', 'Personal Details')}</Text>
+          <Text style={styles.label}>{t('first_name', 'First Name')}</Text>
           <TextInput
             style={[styles.input, errorFields.firstName && styles.errorInput]}
             value={formData.firstName}
@@ -366,10 +367,10 @@ const RegistrationScreen = () => {
             onChangeText={(value) => handleInputChange('firstName', value)}
           />
           {errorFields.firstName && (
-            <Text style={styles.errorText}>This field is required.</Text>
+            <Text style={styles.errorText}>{t('required_field', 'This field is required.')}</Text>
           )}
 
-          <Text style={styles.label}>Last Name</Text>
+          <Text style={styles.label}>{t('last_name', 'Last Name')}</Text>
           <TextInput
             style={[styles.input, errorFields.lastName && styles.errorInput]}
             value={formData.lastName}
@@ -377,38 +378,32 @@ const RegistrationScreen = () => {
             onChangeText={(value) => handleInputChange('lastName', value)}
           />
           {errorFields.lastName && (
-            <Text style={styles.errorText}>This field is required.</Text>
+            <Text style={styles.errorText}>{t('required_field', 'This field is required.')}</Text>
           )}
 
-          <Text style={styles.label}>Gender</Text>
+          <Text style={styles.label}>{t('gender', 'Gender')}</Text>
           <View style={styles.row}>
-            <View>
-              <View style={[styles.genderRow, formData.gender === 'male' && styles.checked]}>
-                <RadioButton
-                  value="male"
-                  status={formData.gender === 'male' ? 'checked' : 'unchecked'}
-                  onPress={() => {
-                    if (isEditing) handleInputChange('gender', 'male');
-                  }}
-                  color="#FF5722"
-                />
-                <Text style={styles.radioText}>Male</Text>
-              </View>
-              <View style={[styles.genderRow, formData.gender === 'female' && styles.checked]}>
-                <RadioButton
-                  value="female"
-                  status={formData.gender === 'female' ? 'checked' : 'unchecked'}
-                  onPress={() => {
-                    if (isEditing) handleInputChange('gender', 'female');
-                  }}
-                  color="#FF5722"
-                />
-                <Text style={styles.radioText}>Female</Text>
-              </View>
+            <View style={[styles.genderRow, formData.gender === 'male' && styles.checked]}>
+              <RadioButton
+                value="male"
+                status={formData.gender === 'male' ? 'checked' : 'unchecked'}
+                onPress={() => { if (isEditing) handleInputChange('gender', 'male'); }}
+                color="#FF5722"
+              />
+              <Text style={styles.radioText}>{t('male', 'Male')}</Text>
+            </View>
+            <View style={[styles.genderRow, formData.gender === 'female' && styles.checked]}>
+              <RadioButton
+                value="female"
+                status={formData.gender === 'female' ? 'checked' : 'unchecked'}
+                onPress={() => { if (isEditing) handleInputChange('gender', 'female'); }}
+                color="#FF5722"
+              />
+              <Text style={styles.radioText}>{t('female', 'Female')}</Text>
             </View>
           </View>
 
-          <Text style={styles.label}>Work Experience (Years)</Text>
+          <Text style={styles.label}>{t('work_experience', 'Work Experience (Years)')}</Text>
           <Dropdown
             style={[styles.dropdown, errorFields.workExperience && styles.errorInput]}
             containerStyle={styles.dropdownContainer}
@@ -420,7 +415,7 @@ const RegistrationScreen = () => {
             iconStyle={styles.iconStyle}
             inputSearchStyle={styles.inputSearchStyle}
             valueField="value"
-            placeholder="Select your experience"
+            placeholder={t('select_experience', 'Select your experience')}
             value={formData.workExperience}
             onChange={(item) => handleInputChange('workExperience', item.value)}
             renderRightIcon={() => (
@@ -433,10 +428,10 @@ const RegistrationScreen = () => {
             )}
           />
           {errorFields.workExperience && (
-            <Text style={styles.errorText}>This field is required.</Text>
+            <Text style={styles.errorText}>{t('required_field', 'This field is required.')}</Text>
           )}
 
-          <Text style={styles.label}>Age</Text>
+          <Text style={styles.label}>{t('age', 'Age')}</Text>
           <TextInput
             style={[styles.input, errorFields.dob && styles.errorInput]}
             value={formData.dob}
@@ -444,10 +439,10 @@ const RegistrationScreen = () => {
             onChangeText={(value) => handleInputChange('dob', value)}
           />
           {errorFields.dob && (
-            <Text style={styles.errorText}>This field is required.</Text>
+            <Text style={styles.errorText}>{t('required_field', 'This field is required.')}</Text>
           )}
 
-          <Text style={styles.label}>Education</Text>
+          <Text style={styles.label}>{t('education', 'Education')}</Text>
           <Dropdown
             style={[styles.dropdown, errorFields.education && styles.errorInput]}
             containerStyle={styles.dropdownContainer}
@@ -459,7 +454,7 @@ const RegistrationScreen = () => {
             iconStyle={styles.iconStyle}
             inputSearchStyle={styles.inputSearchStyle}
             valueField="value"
-            placeholder="Select Education"
+            placeholder={t('select_education', 'Select Education')}
             value={formData.education}
             onChange={(item) => handleInputChange('education', item.value)}
             renderRightIcon={() => (
@@ -472,16 +467,14 @@ const RegistrationScreen = () => {
             )}
           />
           {errorFields.education && (
-            <Text style={styles.errorText}>This field is required.</Text>
+            <Text style={styles.errorText}>{t('required_field', 'This field is required.')}</Text>
           )}
 
-          <Text style={styles.label}>Mobile Number</Text>
+          <Text style={styles.label}>{t('mobile_number', 'Mobile Number')}</Text>
           <View style={styles.phoneContainer}>
             <View style={styles.countryCode}>
               <Image
-                source={{
-                  uri: 'https://cdn-icons-png.flaticon.com/512/206/206606.png',
-                }}
+                source={{ uri: 'https://cdn-icons-png.flaticon.com/512/206/206606.png' }}
                 style={styles.flagIcon}
               />
               <Text style={styles.label}>+91</Text>
@@ -499,9 +492,9 @@ const RegistrationScreen = () => {
 
         <View style={styles.horizantalLine} />
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Address / Residential Details</Text>
+          <Text style={styles.sectionTitle}>{t('address_details', 'Address / Residential Details')}</Text>
 
-          <Text style={styles.label}>Door-No/Street</Text>
+          <Text style={styles.label}>{t('door_no', 'Door-No/Street')}</Text>
           <TextInput
             style={[styles.input, errorFields.doorNo && styles.errorInput]}
             value={formData.doorNo}
@@ -509,10 +502,10 @@ const RegistrationScreen = () => {
             onChangeText={(value) => handleInputChange('doorNo', value)}
           />
           {errorFields.doorNo && (
-            <Text style={styles.errorText}>This field is required.</Text>
+            <Text style={styles.errorText}>{t('required_field', 'This field is required.')}</Text>
           )}
 
-          <Text style={styles.label}>Landmark</Text>
+          <Text style={styles.label}>{t('landmark', 'Landmark')}</Text>
           <TextInput
             style={[styles.input, errorFields.landmark && styles.errorInput]}
             value={formData.landmark}
@@ -520,10 +513,10 @@ const RegistrationScreen = () => {
             onChangeText={(value) => handleInputChange('landmark', value)}
           />
           {errorFields.landmark && (
-            <Text style={styles.errorText}>This field is required.</Text>
+            <Text style={styles.errorText}>{t('required_field', 'This field is required.')}</Text>
           )}
 
-          <Text style={styles.label}>City</Text>
+          <Text style={styles.label}>{t('city', 'City')}</Text>
           <TextInput
             style={[styles.input, errorFields.city && styles.errorInput]}
             value={formData.city}
@@ -531,10 +524,10 @@ const RegistrationScreen = () => {
             onChangeText={(value) => handleInputChange('city', value)}
           />
           {errorFields.city && (
-            <Text style={styles.errorText}>This field is required.</Text>
+            <Text style={styles.errorText}>{t('required_field', 'This field is required.')}</Text>
           )}
 
-          <Text style={styles.label}>Pin Code</Text>
+          <Text style={styles.label}>{t('pin_code', 'Pin Code')}</Text>
           <TextInput
             style={[styles.input, errorFields.pincode && styles.errorInput]}
             value={formData.pincode}
@@ -542,10 +535,10 @@ const RegistrationScreen = () => {
             onChangeText={(value) => handleInputChange('pincode', value)}
           />
           {errorFields.pincode && (
-            <Text style={styles.errorText}>This field is required.</Text>
+            <Text style={styles.errorText}>{t('required_field', 'This field is required.')}</Text>
           )}
 
-          <Text style={styles.label}>District</Text>
+          <Text style={styles.label}>{t('district', 'District')}</Text>
           <TextInput
             style={[styles.input, errorFields.district && styles.errorInput]}
             value={formData.district}
@@ -553,10 +546,10 @@ const RegistrationScreen = () => {
             onChangeText={(value) => handleInputChange('district', value)}
           />
           {errorFields.district && (
-            <Text style={styles.errorText}>This field is required.</Text>
+            <Text style={styles.errorText}>{t('required_field', 'This field is required.')}</Text>
           )}
 
-          <Text style={styles.label}>State</Text>
+          <Text style={styles.label}>{t('state', 'State')}</Text>
           <TextInput
             style={[styles.input, errorFields.state && styles.errorInput]}
             value={formData.state}
@@ -564,27 +557,27 @@ const RegistrationScreen = () => {
             onChangeText={(value) => handleInputChange('state', value)}
           />
           {errorFields.state && (
-            <Text style={styles.errorText}>This field is required.</Text>
+            <Text style={styles.errorText}>{t('required_field', 'This field is required.')}</Text>
           )}
         </View>
 
         <View style={styles.horizantalLine} />
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Skill Details</Text>
+          <Text style={styles.sectionTitle}>{t('skill_details', 'Skill Details')}</Text>
 
-          <Text style={styles.label}>Select Service Category</Text>
+          <Text style={styles.label}>{t('select_service_category', 'Select Service Category')}</Text>
           <Dropdown
             style={[styles.dropdown, errorFields.skillCategory && styles.errorInput]}
             containerStyle={styles.dropdownContainer}
             data={skillCategoryItems}
             disable={true}
             placeholderStyle={styles.placeholderStyle}
-            labelField="label"
+            labelField="label" 
             selectedTextStyle={styles.selectedTextStyle}
             iconStyle={styles.iconStyle}
             inputSearchStyle={styles.inputSearchStyle}
             valueField="value"
-            placeholder="Select Service Category"
+            placeholder={t('select_service_category', 'Select Service Category')}
             value={formData.skillCategory}
             onChange={(item) => handleInputChange('skillCategory', item.value)}
             renderRightIcon={() => (
@@ -592,34 +585,28 @@ const RegistrationScreen = () => {
             )}
             renderItem={(item) => (
               <View style={styles.dropdownItem}>
-                <Text style={styles.dropdownItemText}>{item.label}</Text>
+                <Text style={styles.dropdownItemText}>
+                  {t(`service_${item.id}`, item.label)}
+                </Text>
               </View>
             )}
           />
           {errorFields.skillCategory && (
-            <Text style={styles.errorText}>This field is required.</Text>
+            <Text style={styles.errorText}>{t('required_field', 'This field is required.')}</Text>
           )}
 
           <View style={[styles.checkboxGrid, formData.subSkills.length > 0 && styles.checked]}>
             {Object.keys(groupedSubServices).map((categoryName) => (
               <View key={categoryName} style={{ marginBottom: 16 }}>
-                <Text style={styles.checkboxCategoryTitle}>{categoryName}</Text>
+                <Text style={styles.checkboxCategoryTitle}>{groupedSubServices[categoryName][0].value}</Text>
                 {groupedSubServices[categoryName].map((item) => (
-                  <View key={item.id} style={styles.checkboxContainer}>
+                  <View key={item.tag} style={styles.checkboxContainer}>
                     <Checkbox
-                      status={
-                        formData.subSkills.includes(item.label)
-                          ? 'checked'
-                          : 'unchecked'
-                      }
-                      onPress={() => {
-                        if (isEditing) {
-                          handleCheckboxChange(item.label);
-                        }
-                      }}
+                      status={formData.subSkills.includes(item.label) ? 'checked' : 'unchecked'}
+                      onPress={() => { if (isEditing) handleCheckboxChange(item.label); }}
                       color="#FF5722"
                     />
-                    <Text style={styles.label}>{item.label}</Text>
+                    <Text style={styles.label}>{item.tag}</Text> 
                   </View>
                 ))}
               </View>
@@ -631,17 +618,11 @@ const RegistrationScreen = () => {
 
         <View style={{ marginBottom: 30 }}>
           {loading ? (
-            <ActivityIndicator
-              size="large"
-              color="#FF5722"
-              style={{ marginVertical: 20 }}
-            />
+            <ActivityIndicator size="large" color="#FF5722" style={{ marginVertical: 20 }} />
           ) : isEditing ? (
             <SwipeButton
-              forceReset={(reset) => {
-                // Optional: capture this reset if needed
-              }}
-              title="Submit to Commander"
+              forceReset={(reset) => {}}
+              title={t('submit_to_commander', 'Submit to Commander')}
               titleStyles={{ color: titleColor, fontSize: 16 }}
               railBackgroundColor="#ffffff"
               railBorderColor="#EFDCCB"
@@ -664,9 +645,7 @@ const RegistrationScreen = () => {
               }}
               onSwipeFail={() => setTitleColor('#FF5722')}
             />
-          ) : (
-            <></>
-          )}
+          ) : null}
         </View>
       </ScrollView>
     </View>

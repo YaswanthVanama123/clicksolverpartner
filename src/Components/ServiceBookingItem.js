@@ -8,21 +8,22 @@ import {
   ScrollView,
   Alert,
   Linking,
-  useWindowDimensions, // <-- important for responsiveness
+  useWindowDimensions,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome6';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, CommonActions, useRoute } from '@react-navigation/native';
 import axios from 'axios';
-// Import the theme hook from your context
 import { useTheme } from '../context/ThemeContext';
+// Import translation hook
+import { useTranslation } from 'react-i18next';
 
 const ServiceBookingItem = () => {
   const { width } = useWindowDimensions();  // get screen width
-  // Get isDarkMode from theme context and pass it to our dynamic styles generator
   const { isDarkMode } = useTheme();
   const styles = dynamicStyles(width, isDarkMode);
-
+  const { t } = useTranslation();
+  
   const [details, setDetails] = useState({});
   const [serviceArray, setServiceArray] = useState([]);
   const [status, setStatus] = useState({
@@ -32,11 +33,12 @@ const ServiceBookingItem = () => {
     paymentCompleted: '2024-11-02 22:16:56',
   });
 
+  // Map status keys to translation keys
   const statusDisplayNames = {
-    accept: 'Commander Accepted',
-    arrived: 'Commander Arrived',
-    workCompleted: 'Work Completed',
-    paymentCompleted: 'Payment Completed',
+    accept: t('commander_accepted', 'Commander Accepted'),
+    arrived: t('commander_arrived', 'Commander Arrived'),
+    workCompleted: t('work_completed', 'Work Completed'),
+    paymentCompleted: t('payment_completed', 'Payment Completed'),
   };
 
   const { tracking_id } = useRoute().params;
@@ -57,7 +59,7 @@ const ServiceBookingItem = () => {
           ? '#ff4500'
           : '#a1a1a1',
     }));
-  }, [status]);
+  }, [status, statusDisplayNames]);
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -67,7 +69,6 @@ const ServiceBookingItem = () => {
           { tracking_id }
         );
         const { data } = response.data;
-        // If you have paymentDetails in response, you can handle them as well
         setStatus(data.time || {});
         setDetails(data);
         setServiceArray(data.service_booked || []);
@@ -88,6 +89,16 @@ const ServiceBookingItem = () => {
     });
   }, []);
 
+  // Helper: format the date
+  const formatDate = (created_at) => {
+    const date = new Date(created_at);
+    const monthNames = [
+      'January','February','March','April','May','June',
+      'July','August','September','October','November','December',
+    ];
+    return `${monthNames[date.getMonth()]} ${String(date.getDate()).padStart(2, '0')}, ${date.getFullYear()}`;
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -98,7 +109,9 @@ const ServiceBookingItem = () => {
           style={styles.backIcon}
           onPress={() => navigation.goBack()}
         />
-        <Text style={styles.headerText}>Service Tracking</Text>
+        <Text style={styles.headerText}>
+          {t('service_tracking', 'Service Tracking')}
+        </Text>
       </View>
 
       <ScrollView>
@@ -119,11 +132,14 @@ const ServiceBookingItem = () => {
 
         {/* Service Details */}
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionBookedTitle}>Service Details</Text>
+          <Text style={styles.sectionBookedTitle}>
+            {t('service_details', 'Service Details')}
+          </Text>
           <View style={styles.innerContainer}>
             {serviceArray.map((service, index) => (
               <Text key={index} style={styles.serviceDetail}>
-                {service.serviceName}
+                { t(`singleService_${service.main_service_id}`) || service.serviceName }
+       
               </Text>
             ))}
           </View>
@@ -134,7 +150,9 @@ const ServiceBookingItem = () => {
         {/* Service Timeline */}
         <View style={styles.sectionContainer}>
           <View style={styles.serviceTimeLineContainer}>
-            <Text style={styles.sectionTitle}>Service Timeline</Text>
+            <Text style={styles.sectionTitle}>
+              {t('service_timeline', 'Service Timeline')}
+            </Text>
           </View>
           <View style={styles.innerContainerLine}>
             {getTimelineData.map((item, index) => (
@@ -168,7 +186,9 @@ const ServiceBookingItem = () => {
 
         {/* Address */}
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>Address</Text>
+          <Text style={styles.sectionTitle}>
+            {t('address', 'Address')}
+          </Text>
           <View style={styles.addressContainer}>
             <Image
               source={{
@@ -184,25 +204,33 @@ const ServiceBookingItem = () => {
 
         {/* Payment Details */}
         <View style={styles.paymentInnerContainer}>
-          <Text style={styles.sectionPaymentTitle}>Payment Details</Text>
+          <Text style={styles.sectionPaymentTitle}>
+            {t('payment_details', 'Payment Details')}
+          </Text>
         </View>
         <View style={styles.sectionContainer}>
           <View style={styles.PaymentItemContainer}>
             {details.discount > 0 && (
               <View style={styles.paymentRow}>
-                <Text style={styles.paymentLabel}>Cashback (5%)</Text>
+                <Text style={styles.paymentLabel}>
+                  {t('cashback', 'Cashback (5%)')}
+                </Text>
                 <Text style={styles.paymentValue}>₹{details.discount}</Text>
               </View>
             )}
             <View style={styles.paymentRow}>
-              <Text style={styles.paymentValue}>Grand Total</Text>
+              <Text style={styles.paymentValue}>
+                {t('grand_total', 'Grand Total')}
+              </Text>
               <Text style={styles.paymentValue}>₹ {details.total_cost}</Text>
             </View>
           </View>
         </View>
 
         <TouchableOpacity style={styles.payButton} onPress={openPhonePeScanner}>
-          <Text style={styles.payButtonText}>PAYED</Text>
+          <Text style={styles.payButtonText}>
+            {t('payed', 'PAYED')}
+          </Text>
         </TouchableOpacity>
       </ScrollView>
     </View>
@@ -266,7 +294,6 @@ function dynamicStyles(width, isDarkMode) {
     profileTextContainer: {
       flex: 1,
       flexDirection: 'column',
-      // alignItems: 'center',
       justifyContent: 'space-between',
       paddingRight: isTablet ? 20 : 16,
     },

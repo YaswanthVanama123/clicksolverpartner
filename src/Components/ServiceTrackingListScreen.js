@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -16,24 +16,42 @@ import EncryptedStorage from 'react-native-encrypted-storage';
 import axios from 'axios';
 import uuid from 'react-native-uuid';
 import { useNavigation } from '@react-navigation/native';
-// Import our theme hook
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from 'react-i18next';
+import i18next from 'i18next';
+
+// 1) Map raw server statuses to i18n keys.
+const statusMap = {
+  'Work Completed': 'work_completed',
+  'Work started': 'work_started',
+  'Collected Item': 'collected_item',
+  // If your server might send other statuses, add them here.
+};
 
 const ServiceTrackingListScreen = () => {
   const { width, height } = useWindowDimensions();
   const { isDarkMode } = useTheme();
   const styles = dynamicStyles(width, height, isDarkMode);
-
-  const [serviceData, setServiceData] = useState([]);
-  const [filteredData, setFilteredData] = useState([]);
-  const [isFilterVisible, setIsFilterVisible] = useState(false);
-  const [selectedFilters, setSelectedFilters] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const { t } = useTranslation();
   const navigation = useNavigation();
 
-  const filterOptions = ['Collected Item', 'Work started', 'Work Completed'];
+  // 2) We’ll store the server data and the filtered list separately.
+  const [serviceData, setServiceData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
+  const [selectedFilters, setSelectedFilters] = useState([]); // translation keys
+  const [isFilterVisible, setIsFilterVisible] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
+  // 3) Define filter options as translation keys, not raw text.
+  //    We'll provide fallback text if translations aren't set up yet.
+  const filterOptions = [
+    'collected_item',
+    'work_started',
+    'work_completed',
+  ];
+
+  // Fetch data from API
   const fetchBookings = async () => {
     setLoading(true);
     setError(false);
@@ -49,12 +67,11 @@ const ServiceTrackingListScreen = () => {
           },
         },
       );
-      console.log("data",response.data);
+      console.log('data', response.data);
       setServiceData(response.data);
       setFilteredData(response.data);
-    } catch (error) {
-      console.log("work")
-      console.error('Error fetching bookings data:', error.response || error);
+    } catch (err) {
+      console.error('Error fetching bookings data:', err.response || err);
       setError(true);
     } finally {
       setLoading(false);
@@ -65,42 +82,77 @@ const ServiceTrackingListScreen = () => {
     fetchBookings();
   }, []);
 
-  const formatDate = (created_at) => {
-    const date = new Date(created_at);
-    const monthNames = [
-      'January','February','March','April','May','June',
-      'July','August','September','October','November','December',
-    ];
-    return `${monthNames[date.getMonth()]} ${String(date.getDate()).padStart(2, '0')}, ${date.getFullYear()}`;
+  // Utility to format date
+  // const formatDate = (created_at) => {
+  //   const date = new Date(created_at);
+  //   const monthNames = [
+  //     'January','February','March','April','May','June',
+  //     'July','August','September','October','November','December',
+  //   ];
+  //   return `${monthNames[date.getMonth()]} ${String(date.getDate()).padStart(2, '0')}, ${date.getFullYear()}`;
+  // };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Pending';
+  
+    const date = new Date(dateString);
+  
+    return new Intl.DateTimeFormat(i18next.language, {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      hour12: true,
+    }).format(date);
   };
 
+  // Navigate to detail screen
   const handleCardPress = (trackingId) => {
     navigation.push('ServiceTrackingItem', { tracking_id: trackingId });
   };
 
-  const toggleFilter = (status) => {
-    const updatedFilters = selectedFilters.includes(status)
-      ? selectedFilters.filter((s) => s !== status)
-      : [...selectedFilters, status];
+  // Toggle filter selection and re-filter data
+  const toggleFilter = (statusKey) => {
+    const updatedFilters = selectedFilters.includes(statusKey)
+      ? selectedFilters.filter((s) => s !== statusKey)
+      : [...selectedFilters, statusKey];
 
     setSelectedFilters(updatedFilters);
 
-    const filtered =
-      updatedFilters.length > 0
-        ? serviceData.filter((item) => updatedFilters.includes(item.service_status))
-        : serviceData;
-
-    setFilteredData(filtered);
+    if (updatedFilters.length === 0) {
+      // No filters selected, show all
+      setFilteredData(serviceData);
+    } else {
+      // Show only items whose mapped key is in updatedFilters
+      const newFilteredData = serviceData.filter((item) => {
+        const key = statusMap[item.service_status]; // e.g. "work_started"
+        return updatedFilters.includes(key);
+      });
+      setFilteredData(newFilteredData);
+    }
   };
 
+  // Close the filter dropdown if user taps outside
   const handleOutsidePress = () => {
     if (isFilterVisible) {
       setIsFilterVisible(false);
     }
   };
 
-  // Sub-component for each service item
+  // Component to render each service item
   const ServiceItem = ({ item }) => {
+    // Convert raw status to i18n key
+    const key = statusMap[item.service_status] || 'unknown_status';
+    // Get the localized status text
+    const statusText = t(key, item.service_status);
+
+    // Decide the background color of the label
+    let labelStyle = styles.onTheWay;
+    if (key === 'work_started') labelStyle = styles.inProgress;
+    if (key === 'work_completed') labelStyle = styles.completed;
+    if (key === 'collected_item') labelStyle = styles.onTheWay;
+
     return (
       <TouchableOpacity
         style={styles.itemContainer}
@@ -110,9 +162,9 @@ const ServiceTrackingListScreen = () => {
           <View style={styles.serviceIconContainer}>
             <MaterialCommunityIcons
               name={
-                item.service_status === 'Work Completed'
+                key === 'work_completed'
                   ? 'check-circle'
-                  : item.service_status === 'Work started'
+                  : key === 'work_started'
                   ? 'hammer'
                   : 'truck'
               }
@@ -121,29 +173,16 @@ const ServiceTrackingListScreen = () => {
             />
           </View>
           <View style={styles.itemTextContainer}>
-            <Text style={styles.itemTitle}>{item.service_status}</Text>
-            <Text style={styles.itemDate}>Scheduled for:</Text>
+            {/* Show the translated status text */}
+            <Text style={styles.itemTitle}>{statusText}</Text>
+            <Text style={styles.itemDate}>
+              {t('scheduled_for', 'Scheduled for:')}
+            </Text>
             <Text style={styles.itemDate}>{formatDate(item.created_at)}</Text>
           </View>
-          <View
-            style={[
-              styles.statusLabel,
-              item.service_status === 'Collected Item'
-                ? styles.inProgress
-                : item.service_status === 'Work Completed'
-                ? styles.completed
-                : styles.onTheWay,
-            ]}
-          >
-            <Text style={styles.statusText}>
-              {item.service_status === 'Work Completed'
-                ? 'Completed'
-                : item.service_status === 'Work started'
-                ? 'In Progress'
-                : item.service_status === 'Collected Item'
-                ? 'Item Collected'
-                : 'On the Way'}
-            </Text>
+          <View style={[styles.statusLabel, labelStyle]}>
+            {/* <Text style={styles.statusText}>{statusText}</Text> */}
+            <Text style={styles.statusText}>View</Text>
           </View>
         </View>
       </TouchableOpacity>
@@ -155,78 +194,90 @@ const ServiceTrackingListScreen = () => {
       <SafeAreaView style={styles.container}>
         {/* Header */}
         <View style={styles.headerContainer}>
-          <Icon name="arrow-back" size={24} color={isDarkMode ? "#ffffff" : "#000"} />
-          <Text style={styles.headerTitle}>Service Tracking</Text>
+          <Icon name="arrow-back" size={24} color={isDarkMode ? '#ffffff' : '#000'} />
+          <Text style={styles.headerTitle}>
+            {t('service_tracking', 'Service Tracking')}
+          </Text>
           <TouchableOpacity onPress={() => setIsFilterVisible(!isFilterVisible)}>
-            <Icon name="filter-list" size={24} color={isDarkMode ? "#ffffff" : "#000"} />
+            <Icon name="filter-list" size={24} color={isDarkMode ? '#ffffff' : '#000'} />
           </TouchableOpacity>
         </View>
 
         {/* Filter Dropdown */}
         {isFilterVisible && (
           <View style={styles.dropdownContainer}>
-            <Text style={styles.dropdownTitle}>PROJECT TYPE</Text>
-            {filterOptions.map((option, index) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.dropdownOption}
-                onPress={() => toggleFilter(option)}
-              >
-                <Icon
-                  name={
-                    selectedFilters.includes(option)
-                      ? 'check-box'
-                      : 'check-box-outline-blank'
-                  }
-                  size={20}
-                  color={isDarkMode ? "#ffffff" : "#4a4a4a"}
-                />
-                <Text style={styles.dropdownText}>{option}</Text>
-              </TouchableOpacity>
-            ))}
+            <Text style={styles.dropdownTitle}>
+              {t('project_type', 'PROJECT TYPE')}
+            </Text>
+            {filterOptions.map((optionKey) => {
+              // Provide fallback if translation not found
+              let fallback = 'Unknown Status';
+              if (optionKey === 'work_started') fallback = 'Work started';
+              if (optionKey === 'work_completed') fallback = 'Work Completed';
+              if (optionKey === 'collected_item') fallback = 'Collected Item';
+
+              return (
+                <TouchableOpacity
+                  key={optionKey}
+                  style={styles.dropdownOption}
+                  onPress={() => toggleFilter(optionKey)}
+                >
+                  <Icon
+                    name={
+                      selectedFilters.includes(optionKey)
+                        ? 'check-box'
+                        : 'check-box-outline-blank'
+                    }
+                    size={20}
+                    color={isDarkMode ? '#ffffff' : '#4a4a4a'}
+                  />
+                  <Text style={styles.dropdownText}>{t(optionKey, fallback)}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         )}
 
         {/* Service List */}
         <View style={styles.trackingItems}>
-        {loading ? (
-  <ActivityIndicator size="large" color="#FF5722" style={styles.loadingIndicator} />
-) : error ? (
-  <View style={styles.errorContainer}>
-    <Text style={styles.errorText}>Something went wrong. Please try again.</Text>
-    <TouchableOpacity style={styles.retryButton} onPress={fetchBookings}>
-      <Text style={styles.retryButtonText}>Retry</Text>
-    </TouchableOpacity>
-  </View>
-) : filteredData.length === 0 ? (
-  <View style={styles.noDataContainer}>
-    <Icon name="search-off" size={48} color="#888" />
-    <Text style={styles.noDataText}>No tracking data available</Text>
-    {/* <TouchableOpacity style={styles.retryButton} onPress={fetchBookings}>
-      <Text style={styles.retryButtonText}>Retry</Text>
-    </TouchableOpacity> */}
-  </View>
-) : (
-  <FlatList
-    data={filteredData}
-    renderItem={({ item }) => <ServiceItem item={item} />}
-    keyExtractor={() => uuid.v4()}
-    contentContainerStyle={styles.listContainer}
-  />
-)}
-
+          {loading ? (
+            <ActivityIndicator
+              size="large"
+              color="#FF5722"
+              style={styles.loadingIndicator}
+            />
+          ) : error ? (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>
+                {t('error_message', 'Something went wrong. Please try again.')}
+              </Text>
+              <TouchableOpacity style={styles.retryButton} onPress={fetchBookings}>
+                <Text style={styles.retryButtonText}>{t('retry', 'Retry')}</Text>
+              </TouchableOpacity>
+            </View>
+          ) : filteredData.length === 0 ? (
+            <View style={styles.noDataContainer}>
+              <Icon name="search-off" size={48} color="#888" />
+              <Text style={styles.noDataText}>
+                {t('no_tracking_data', 'No tracking data available')}
+              </Text>
+            </View>
+          ) : (
+            <FlatList
+              data={filteredData}
+              renderItem={({ item }) => <ServiceItem item={item} />}
+              keyExtractor={() => uuid.v4()}
+              contentContainerStyle={styles.listContainer}
+            />
+          )}
         </View>
       </SafeAreaView>
     </TouchableWithoutFeedback>
   );
 };
 
-/**
- * Dynamic styles generator that accepts screen width, height, and isDarkMode flag.
- */
+// Dynamic styles
 function dynamicStyles(width, height, isDarkMode) {
-  const isTablet = width >= 600;
-
   return StyleSheet.create({
     container: {
       flex: 1,
@@ -335,13 +386,13 @@ function dynamicStyles(width, height, isDarkMode) {
       alignItems: 'center',
     },
     inProgress: {
-      backgroundColor: '#ffecb3',
+      backgroundColor: '#ffecb3', // Example color
     },
     completed: {
-      backgroundColor: '#c8e6c9',
+      backgroundColor: '#c8e6c9', // Example color
     },
     onTheWay: {
-      backgroundColor: '#bbdefb',
+      backgroundColor: '#bbdefb', // Example color
     },
     statusText: {
       fontSize: 12,
@@ -384,3 +435,4 @@ function dynamicStyles(width, height, isDarkMode) {
 }
 
 export default ServiceTrackingListScreen;
+ 

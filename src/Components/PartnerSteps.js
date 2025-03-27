@@ -8,7 +8,7 @@ import {
   Modal,
   Linking,
   ActivityIndicator,
-  ScrollView, // Added ScrollView import
+  ScrollView,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import axios from 'axios';
@@ -16,11 +16,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import EncryptedStorage from 'react-native-encrypted-storage';
 import { useTheme } from '../context/ThemeContext';
+// Import translation hook
+import { useTranslation } from 'react-i18next';
 
 const PartnerSteps = () => {
   const { isDarkMode } = useTheme();
   const styles = dynamicStyles(isDarkMode);
   const navigation = useNavigation();
+  const { t } = useTranslation();
 
   // Step statuses
   const [step1Status, setStep1Status] = useState(false);
@@ -44,7 +47,7 @@ const PartnerSteps = () => {
   // Fetch step statuses from API
   const fetchStepStatuses = useCallback(async () => {
     try {
-      setIsLoading(true); // Start loading
+      setIsLoading(true);
       const pcs_token = await EncryptedStorage.getItem('pcs_token');
       if (!pcs_token) throw new Error('pcs_token not found');
 
@@ -54,7 +57,6 @@ const PartnerSteps = () => {
         { headers: { Authorization: `Bearer ${pcs_token}` } },
       );
 
-      // Example response structure
       setStep1Status(response.data.steps.step1);
       setStep2Status(response.data.steps.step2);
       setBankAccountAdded(response.data.steps.bankAccount);
@@ -62,7 +64,7 @@ const PartnerSteps = () => {
     } catch (error) {
       console.error('Error fetching step statuses:', error);
     } finally {
-      setIsLoading(false); // End loading
+      setIsLoading(false);
     }
   }, []);
 
@@ -71,11 +73,15 @@ const PartnerSteps = () => {
   }, [fetchStepStatuses]);
 
   // Toggle logout pop-up
-  const toggleLogout = () => setShowLogout(prev => !prev);
+  const toggleLogout = () => setShowLogout((prev) => !prev);
   const handleLogout = async () => {
     await EncryptedStorage.removeItem('pcs_token');
     navigation.replace('Login');
   };
+
+  const handleLanguageChange = async () => {
+    navigation.push('LanguageSelector');
+  }
 
   // Step 3 is complete if a bank account or UPI ID is added
   const isStep3Complete = bankAccountAdded || upiIdAdded;
@@ -102,15 +108,20 @@ const PartnerSteps = () => {
         {/* Top bar with Help & Logout */}
         <View style={styles.topBar}>
           <TouchableOpacity onPress={() => setShowHelpModal(true)}>
-            <Text style={styles.helpText}>Help</Text>
+            <Text style={styles.helpText}>{t('help', 'Help')}</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={toggleLogout} style={styles.moreIcon}>
             <Icon name="more-vert" size={24} color={isDarkMode ? '#fff' : '#333'} />
           </TouchableOpacity>
           {showLogout && (
-            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-              <Text style={styles.logoutText}>Logout</Text>
+            <View style={styles.logoutButton}>
+            <TouchableOpacity style={styles.logoutButto} onPress={handleLogout}>
+              <Text style={styles.logoutText}>{t('logout', 'Logout')}</Text>
             </TouchableOpacity>
+                        <TouchableOpacity style={styles.logoutButto} onPress={handleLanguageChange}>
+                        <Text style={styles.logoutText}>{t('languagechange', 'Language Change')}</Text>
+                      </TouchableOpacity>
+                      </View> 
           )}
         </View>
 
@@ -123,17 +134,17 @@ const PartnerSteps = () => {
         >
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Need Help?</Text>
+              <Text style={styles.modalTitle}>{t('need_help', 'Need Help?')}</Text>
               <TouchableOpacity style={styles.modalButton} onPress={handleMailPress}>
                 <Icon name="mail" size={20} color="#fff" />
-                <Text style={styles.modalButtonText}>Email Us</Text>
+                <Text style={styles.modalButtonText}>{t('email_us', 'Email Us')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.modalButton} onPress={handlePhoneCallPress}>
                 <Icon name="call" size={20} color="#fff" />
-                <Text style={styles.modalButtonText}>Call Us</Text>
+                <Text style={styles.modalButtonText}>{t('call_us', 'Call Us')}</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => setShowHelpModal(false)}>
-                <Text style={styles.modalClose}>Close</Text>
+                <Text style={styles.modalClose}>{t('close', 'Close')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -146,7 +157,7 @@ const PartnerSteps = () => {
             style={styles.workerImage}
           />
           <Text style={styles.headerText}>
-            Become a Click Solver partner in 3 easy steps!
+            {t('partner_steps_header', 'Become a Click Solver partner in 3 easy steps!')}
           </Text>
         </View>
 
@@ -162,10 +173,10 @@ const PartnerSteps = () => {
               color={step1Status ? '#1DA472' : '#9e9e9e'}
             />
             <View style={styles.stepContent}>
-              <Text style={styles.stepTitle}>STEP 1</Text>
-              <Text style={styles.stepName}>Signup</Text>
+              <Text style={styles.stepTitle}>{t('step_1', 'STEP 1')}</Text>
+              <Text style={styles.stepName}>{t('signup', 'Signup')}</Text>
               <Text style={[styles.stepStatus, !step1Status && { color: '#ff4500' }]}>
-                {step1Status ? 'Completed' : 'Incomplete'}
+                {step1Status ? t('completed', 'Completed') : t('incomplete', 'Incomplete')}
               </Text>
             </View>
             {step1Status && <Icon name="check" size={24} color="#1DA472" />}
@@ -184,22 +195,20 @@ const PartnerSteps = () => {
               color={step2Status ? '#1DA472' : '#9e9e9e'}
             />
             <View style={styles.stepContent}>
-              <Text style={styles.stepTitle}>STEP 2</Text>
-              <Text style={styles.stepName}>Profile</Text>
+              <Text style={styles.stepTitle}>{t('step_2', 'STEP 2')}</Text>
+              <Text style={styles.stepName}>{t('profile', 'Profile')}</Text>
               <Text style={[styles.stepStatus, !step2Status && { color: '#ff4500' }]}>
-                {step2Status ? 'Completed' : 'Incomplete'}
+                {step2Status ? t('completed', 'Completed') : t('incomplete', 'Incomplete')}
               </Text>
             </View>
             {step2Status && <Icon name="check" size={24} color="#1DA472" />}
           </View>
-
-          {/* Show "Proceed" if Step 2 is selected but incomplete */}
           {selectedStep === 2 && !step2Status && (
             <TouchableOpacity
               style={styles.proceedButton}
               onPress={() => navigation.push('ServiceRegistration')}
             >
-              <Text style={styles.proceedButtonText}>Proceed</Text>
+              <Text style={styles.proceedButtonText}>{t('proceed', 'Proceed')}</Text>
             </TouchableOpacity>
           )}
         </TouchableOpacity>
@@ -216,19 +225,16 @@ const PartnerSteps = () => {
               color={isStep3Complete ? '#1DA472' : '#9e9e9e'}
             />
             <View style={styles.stepContent}>
-              <Text style={styles.stepTitle}>STEP 3</Text>
-              <Text style={styles.stepName}>Adding Banking Details</Text>
+              <Text style={styles.stepTitle}>{t('step_3', 'STEP 3')}</Text>
+              <Text style={styles.stepName}>{t('adding_banking_details', 'Adding Banking Details')}</Text>
               <Text style={[styles.stepStatus, !isStep3Complete && { color: '#ff4500' }]}>
-                {isStep3Complete ? 'Completed' : 'Incomplete'}
+                {isStep3Complete ? t('completed', 'Completed') : t('incomplete', 'Incomplete')}
               </Text>
             </View>
             {isStep3Complete && <Icon name="check" size={24} color="#1DA472" />}
           </View>
-
-          {/* Bank details options (bank account + UPI) */}
           {selectedStep === 3 && (
             <View style={styles.bankDetailsContainer}>
-              {/* Bank Account Option */}
               <View style={styles.optionContainer}>
                 <TouchableOpacity
                   style={styles.optionRow}
@@ -243,7 +249,7 @@ const PartnerSteps = () => {
                     size={20}
                     color={isDarkMode ? '#fff' : '#000'}
                   />
-                  <Text style={styles.optionText}>Add bank account</Text>
+                  <Text style={styles.optionText}>{t('add_bank_account', 'Add bank account')}</Text>
                   {bankAccountAdded && (
                     <Icon
                       name="check"
@@ -253,58 +259,15 @@ const PartnerSteps = () => {
                     />
                   )}
                 </TouchableOpacity>
-
-                {/* Proceed button for bank account */}
                 {selectedBankOption === 'bankAccount' && !bankAccountAdded && (
                   <TouchableOpacity
                     style={styles.proceedButton}
-                    onPress={() => {
-                      navigation.push('BankAccountScreen');
-                    }}
+                    onPress={() => navigation.push('BankAccountScreen')}
                   >
-                    <Text style={styles.proceedButtonText}>Proceed</Text>
+                    <Text style={styles.proceedButtonText}>{t('proceed', 'Proceed')}</Text>
                   </TouchableOpacity>
                 )}
               </View>
-
-              {/* UPI ID Option */}
-              {/* <View style={styles.optionContainer}>
-                <TouchableOpacity
-                  style={styles.optionRow}
-                  onPress={() => setSelectedBankOption('upiId')}
-                >
-                  <Icon
-                    name={
-                      selectedBankOption === 'upiId'
-                        ? 'radio-button-checked'
-                        : 'radio-button-unchecked'
-                    }
-                    size={20}
-                    color={isDarkMode ? '#fff' : '#000'}
-                  />
-                  <Text style={styles.optionText}>Add UPI Id</Text>
-                  {upiIdAdded && (
-                    <Icon
-                      name="check"
-                      size={20}
-                      color="#1DA472"
-                      style={{ marginLeft: 8 }}
-                    />
-                  )}
-                </TouchableOpacity>
-
-      
-                {selectedBankOption === 'upiId' && !upiIdAdded && (
-                  <TouchableOpacity
-                    style={styles.proceedButton}
-                    onPress={() => {
-                      navigation.push('UpiIDScreen');
-                    }}
-                  >
-                    <Text style={styles.proceedButtonText}>Proceed</Text>
-                  </TouchableOpacity>
-                )}
-              </View> */}
             </View>
           )}
         </TouchableOpacity>
@@ -312,7 +275,7 @@ const PartnerSteps = () => {
         {/* "Start now" button when all steps are complete */}
         {step1Status && step2Status && isStep3Complete && (
           <TouchableOpacity style={styles.startButton} onPress={navigateToHome}>
-            <Text style={styles.startButtonText}>Start now</Text>
+            <Text style={styles.startButtonText}>{t('start_now', 'Start now')}</Text>
           </TouchableOpacity>
         )}
       </ScrollView>
@@ -324,9 +287,7 @@ const PartnerSteps = () => {
 
       {/* Loading Overlay */}
       {isLoading && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#FF5722" />
-        </View>
+        <ActivityIndicator size="large" color="#FF5722" style={styles.loadingOverlay} />
       )}
     </SafeAreaView>
   );
@@ -359,7 +320,7 @@ function dynamicStyles(isDarkMode) {
     logoutButton: {
       backgroundColor: isDarkMode ? '#333333' : '#fff',
       padding: 10,
-      width: 70,
+
       borderRadius: 5,
       position: 'absolute',
       top: 40,
@@ -459,7 +420,6 @@ function dynamicStyles(isDarkMode) {
       fontSize: 18,
       fontWeight: 'bold',
     },
-    // Modal styling
     modalOverlay: {
       flex: 1,
       backgroundColor: 'rgba(0,0,0,0.5)',
@@ -467,10 +427,12 @@ function dynamicStyles(isDarkMode) {
       alignItems: 'center',
     },
     modalContent: {
-      backgroundColor: isDarkMode ? '#333333' : '#fff',
-      padding: 20,
-      borderRadius: 10,
       width: '80%',
+      backgroundColor: isDarkMode ? '#333333' : '#fff',
+      borderRadius: 10,
+      paddingHorizontal: 20,
+      paddingTop: 20,
+      paddingBottom: 30,
       alignItems: 'center',
     },
     modalTitle: {
@@ -500,7 +462,6 @@ function dynamicStyles(isDarkMode) {
       marginTop: 8,
       fontSize: 16,
     },
-    // Floating call button styling
     floatingCallButton: {
       position: 'absolute',
       bottom: 30,
@@ -513,7 +474,6 @@ function dynamicStyles(isDarkMode) {
       alignItems: 'center',
       elevation: 5,
     },
-    // Loading overlay
     loadingOverlay: {
       ...StyleSheet.absoluteFillObject,
       backgroundColor: 'rgba(0,0,0,0.3)',
@@ -523,3 +483,5 @@ function dynamicStyles(isDarkMode) {
     },
   });
 }
+
+

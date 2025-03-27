@@ -25,6 +25,7 @@ import {
   CommonActions,
   useFocusEffect,
 } from '@react-navigation/native';
+import {useTranslation} from 'react-i18next';
 import Geolocation from '@react-native-community/geolocation';
 
 // ICONS
@@ -65,6 +66,7 @@ const WorkerNavigationScreen = () => {
   const { isDarkMode } = useTheme();
   // Generate dynamic styles
   const styles = dynamicStyles(isDarkMode);
+  const {t} = useTranslation();
 
   // ------------------ (A) LOADING & ROTATION STATES FOR REFRESH ICON ------------------
   const [isLoading, setIsLoading] = useState(false);
@@ -177,8 +179,16 @@ const WorkerNavigationScreen = () => {
         navigation.dispatch(
           CommonActions.reset({
             index: 0,
-            routes: [{ name: 'Tabs', state: { routes: [{ name: 'Home' }] } }],
-          }),
+            routes: [
+              {
+                name: 'Tabs',
+                state: {
+                  index: 0, 
+                  routes: [{ name: 'Home' }],
+                },
+              },
+            ],
+          })
         );
         return true;
       };
@@ -225,8 +235,16 @@ const WorkerNavigationScreen = () => {
         navigation.dispatch(
           CommonActions.reset({
             index: 0,
-            routes: [{ name: 'Tabs', state: { routes: [{ name: 'Home' }] } }],
-          }),
+            routes: [
+              {
+                name: 'Tabs',
+                state: {
+                  index: 0, 
+                  routes: [{ name: 'Home' }],
+                },
+              },
+            ],
+          })
         );
       }
     } catch (error) {
@@ -316,8 +334,16 @@ const WorkerNavigationScreen = () => {
         navigation.dispatch(
           CommonActions.reset({
             index: 0,
-            routes: [{ name: 'Tabs', state: { routes: [{ name: 'Home' }] } }],
-          }),
+            routes: [
+              {
+                name: 'Tabs',
+                state: {
+                  index: 0, 
+                  routes: [{ name: 'Home' }],
+                },
+              },
+            ],
+          })
         );
       } else {
         Alert.alert('Cancellation failed', 'Your cancellation time of 2 minutes is over.');
@@ -554,7 +580,6 @@ const WorkerNavigationScreen = () => {
             </Mapbox.ShapeSource>
           )}
         </Mapbox.MapView>
-
         <TouchableOpacity
           style={styles.refreshContainer}
           onPress={handleRefresh}
@@ -571,7 +596,15 @@ const WorkerNavigationScreen = () => {
           navigation.dispatch(
             CommonActions.reset({
               index: 0,
-              routes: [{ name: 'Tabs', state: { routes: [{ name: 'Home' }] } }],
+              routes: [
+                {
+                  name: 'Tabs',
+                  state: {
+                    index: 0,
+                    routes: [{ name: 'Home' }],
+                  },
+                },
+              ],
             })
           );
         }}
@@ -580,20 +613,13 @@ const WorkerNavigationScreen = () => {
       </TouchableOpacity>
       {/* CANCEL BUTTON */}
       <TouchableOpacity style={styles.cancelButton} onPress={handleCancelModal}>
-        <Text style={styles.cancelText}>Cancel</Text>
+        <Text style={styles.cancelText}>{t('cancel', 'Cancel')}</Text>
       </TouchableOpacity>
-
       {/* GOOGLE MAPS BUTTON */}
       <TouchableOpacity style={styles.googleMapsButton} onPress={openGoogleMaps}>
-        <Text style={styles.googleMapsText}>Google Maps</Text>
-        <MaterialCommunityIcons
-          name="navigation-variant"
-          size={20}
-          color="#C1C1C1"
-          style={{ marginLeft: 5 }}
-        />
+        <Text style={styles.googleMapsText}>{t('google_maps', 'Google Maps')}</Text>
+        <MaterialCommunityIcons name="navigation-variant" size={20} color="#C1C1C1" style={{ marginLeft: 5 }} />
       </TouchableOpacity>
-
       {/* REASON MODAL */}
       <Modal
         animationType="slide"
@@ -606,32 +632,35 @@ const WorkerNavigationScreen = () => {
             <AntDesign name="arrowleft" size={20} color={isDarkMode ? '#fff' : 'black'} />
           </TouchableOpacity>
           <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>What is the reason for your cancellation?</Text>
-            <Text style={styles.modalSubtitle}>Could you let us know why you're canceling?</Text>
+            <Text style={styles.modalTitle}>
+              {t('cancel_reason_title', 'What is the reason for your cancellation?')}
+            </Text>
+            <Text style={styles.modalSubtitle}>
+              {t('cancel_reason_subtitle', "Could you let us know why you're canceling?")}
+            </Text>
             <TouchableOpacity style={styles.reasonButton} onPress={openConfirmationModal}>
-              <Text style={styles.reasonText}>Accidentally clicked</Text>
+              <Text style={styles.reasonText}>{t('reason_accidentally_clicked', 'Accidentally clicked')}</Text>
               <AntDesign name="right" size={16} color={isDarkMode ? '#fff' : '#4a4a4a'} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.reasonButton} onPress={openConfirmationModal}>
-              <Text style={styles.reasonText}>Health Issue</Text>
+              <Text style={styles.reasonText}>{t('reason_health_issue', 'Health Issue')}</Text>
               <AntDesign name="right" size={16} color={isDarkMode ? '#fff' : '#4a4a4a'} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.reasonButton} onPress={openConfirmationModal}>
-              <Text style={styles.reasonText}>Another Work get</Text>
+              <Text style={styles.reasonText}>{t('reason_another_work', 'Another Work get')}</Text>
               <AntDesign name="right" size={16} color={isDarkMode ? '#fff' : '#4a4a4a'} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.reasonButton} onPress={openConfirmationModal}>
-              <Text style={styles.reasonText}>Problem to my vehicle</Text>
+              <Text style={styles.reasonText}>{t('reason_vehicle_problem', 'Problem to my vehicle')}</Text>
               <AntDesign name="right" size={16} color={isDarkMode ? '#fff' : '#4a4a4a'} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.reasonButton} onPress={openConfirmationModal}>
-              <Text style={styles.reasonText}>Others</Text>
+              <Text style={styles.reasonText}>{t('reason_others', 'Others')}</Text>
               <AntDesign name="right" size={16} color={isDarkMode ? '#fff' : '#4a4a4a'} />
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
-
       {/* CONFIRMATION MODAL */}
       <Modal
         animationType="slide"
@@ -646,32 +675,30 @@ const WorkerNavigationScreen = () => {
             </TouchableOpacity>
           </View>
           <View style={styles.confirmationModalContainer}>
-            <Text style={styles.confirmationTitle}>Are you sure you want to cancel this Service?</Text>
+            <Text style={styles.confirmationTitle}>
+              {t('confirmation_title', 'Are you sure you want to cancel this Service?')}
+            </Text>
             <Text style={styles.confirmationSubtitle}>
-              The user is waiting for your help to solve their issue. Please avoid clicking cancel and
-              assist them as soon as possible
+              {t('confirmation_subtitle', 'The user is waiting for your help to solve their issue. Please avoid clicking cancel and assist them as soon as possible')}
             </Text>
             <TouchableOpacity style={styles.confirmButton} onPress={handleCancelBooking}>
-              <Text style={styles.confirmButtonText}>Cancel my service</Text>
+              <Text style={styles.confirmButtonText}>{t('cancel_my_service', 'Cancel my service')}</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
-
       {/* BOTTOM DETAILS CARD */}
       {addressDetails && (
         <View style={styles.detailsContainer}>
           <View style={styles.minimumChargesContainer}>
             <Text style={styles.serviceFare}>
-              Safety:{' '}
-              <Text style={styles.amount}>Be quick, stay safe!</Text>
+              {t('safety', 'Safety:')}{' '}
+              <Text style={styles.amount}>{t('be_quick_stay_safe', 'Be quick, stay safe!')}</Text>
             </Text>
           </View>
           <View style={styles.locationContainer}>
             <Image
-              source={{
-                uri: 'https://i.postimg.cc/qvJw8Kzy/Screenshot-2024-11-13-170828-removebg-preview.png',
-              }}
+              source={{ uri: 'https://i.postimg.cc/qvJw8Kzy/Screenshot-2024-11-13-170828-removebg-preview.png' }}
               style={styles.locationPinImage}
             />
             <View style={styles.locationDetails}>
@@ -682,7 +709,7 @@ const WorkerNavigationScreen = () => {
           </View>
           <View style={styles.serviceDetails}>
             <View>
-              <Text style={styles.serviceType}>Service</Text>
+              <Text style={styles.serviceType}>{t('service', 'Service')}</Text>
             </View>
             <View style={styles.iconsContainer}>
               <TouchableOpacity style={styles.actionButton} onPress={phoneCall}>
@@ -707,7 +734,7 @@ const WorkerNavigationScreen = () => {
             >
               {serviceArray.map((serviceItem, index) => (
                 <View key={index} style={styles.serviceItem}>
-                  <Text style={styles.serviceText}>{serviceItem.serviceName}</Text>
+                  <Text style={styles.serviceText}> { t(`singleService_${serviceItem.main_service_id}`) || serviceItem.service_tag } </Text>
                 </View>
               ))}
             </ScrollView>
@@ -717,16 +744,15 @@ const WorkerNavigationScreen = () => {
               </View>
             )}
           </View>
-          <Text style={styles.pickupText}>You are at pickup location</Text>
+          <Text style={styles.pickupText}>{t('pickup_location', 'You are at pickup location')}</Text>
           <View style={{ paddingTop: 10 }}>
             <SwipeButton
-              title="I've Arrived"
+              title={t('i_have_arrived', "I've Arrived")}
               titleStyles={{ color: titleColor }}
               railBackgroundColor="#FF5722"
               railBorderColor="#FF5722"
               railStyles={{
                 borderRadius: 25,
-                height: 50,
                 backgroundColor: '#FF572200',
                 borderColor: '#FF572200',
               }}
@@ -748,6 +774,7 @@ const WorkerNavigationScreen = () => {
       )}
     </View>
   );
+
 };
 
 const bottomCardHeight = 350;

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -21,14 +21,17 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import { RadioButton } from 'react-native-paper';
 import axios from 'axios';
 import Geolocation from '@react-native-community/geolocation';
-// Import theme hook from our context
 import { useTheme } from '../context/ThemeContext';
+// Import translation hook
+import { useTranslation } from 'react-i18next';
 
 const ServiceTrackingItemScreen = () => {
   const { width } = useWindowDimensions();
   const { isDarkMode } = useTheme();
-  // Pass both screen width and theme flag to dynamicStyles
   const styles = dynamicStyles(width, isDarkMode);
+
+  // Translator
+  const { t } = useTranslation();
 
   const [titleColor, setTitleColor] = useState('#FFFFFF');
   const [swiped, setSwiped] = useState(false);
@@ -37,8 +40,15 @@ const ServiceTrackingItemScreen = () => {
   const [isEditVisible, setEditVisible] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState('');
   const { tracking_id } = useRoute().params;
-  const statuses = ['Collected Item', 'Work started', 'Work Completed', 'Delivered'];
   const navigation = useNavigation();
+
+  // Raw statuses used in logic. We only translate them for display.
+  const statuses = [
+    'Collected Item',
+    'Work started',
+    'Work Completed',
+    'Delivered',
+  ];
 
   // Custom thumb icon for the swipe button
   const ThumbIcon = useMemo(
@@ -54,34 +64,29 @@ const ServiceTrackingItemScreen = () => {
     [swiped, styles]
   );
 
+  // Toggle edit mode
   const handleEditPress = () => {
-    setEditVisible(prev => !prev);
+    setEditVisible((prev) => !prev);
   };
 
-  const handleStatusChange = (status) => {
-    setSelectedStatus(status);
+  // Confirm and change status using raw status
+  const handleStatusChange = (rawStatus) => {
+    setSelectedStatus(rawStatus);
     Alert.alert(
-      'Confirm Change',
-      `Are you sure you want to change the status to "${status}"?`,
+      t('confirm_change', 'Confirm Change'),
+      t('confirm_change_message', 'Are you sure you want to change the status to "{{status}}"?', { status: rawStatus }),
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Yes', onPress: () => applyStatusChange(status) },
+        { text: t('cancel', 'Cancel'), style: 'cancel' },
+        { text: t('yes', 'Yes'), onPress: () => applyStatusChange(rawStatus) },
       ]
     );
-  };
-
-  const handlesubmit = () => {
-    navigation.push('TrackingConfirmation', { trackingId: tracking_id });
   };
 
   const applyStatusChange = async (newStatus) => {
     try {
       await axios.post(
-        `https://backend.clicksolver.com/api/service/tracking/update/status`,
-        {
-          tracking_id,
-          newStatus,
-        }
+        'https://backend.clicksolver.com/api/service/tracking/update/status',
+        { tracking_id, newStatus }
       );
       setDetails({ ...details, service_status: newStatus });
       setSelectedStatus('');
@@ -91,6 +96,11 @@ const ServiceTrackingItemScreen = () => {
     }
   };
 
+  const handlesubmit = () => {
+    navigation.push('TrackingConfirmation', { trackingId: tracking_id });
+  };
+
+  // Launch Google Maps with directions
   const openGoogleMaps = () => {
     Geolocation.getCurrentPosition(
       (position) => {
@@ -106,40 +116,68 @@ const ServiceTrackingItemScreen = () => {
     );
   };
 
+  // Make phone call
   const phoneCall = async () => {
-    try { 
-      const response = await axios.post('https://backend.clicksolver.com/api/user/tracking/call', { tracking_id });
+    try {
+      const response = await axios.post('https://backend.clicksolver.com/api/user/tracking/call', {
+        tracking_id,
+      });
       if (response.status === 200 && response.data.mobile) {
         const phoneNumber = response.data.mobile;
         const dialURL = `tel:${phoneNumber}`;
-        Linking.openURL(dialURL).catch(err => 
-          console.error("Error opening dialer:", err)
+        Linking.openURL(dialURL).catch((err) =>
+          console.error('Error opening dialer:', err)
         );
       } else {
-        console.log("Failed to initiate call:", response.data);
+        console.log('Failed to initiate call:', response.data);
       }
     } catch (error) {
-      console.error("Error initiating call:", error.response ? error.response.data : error.message);
+      console.error('Error initiating call:', error.response ? error.response.data : error.message);
     }
   };
 
-  // Generate timeline data based on the current status
+  // Generate timeline data using raw statuses for logic and translating for display
   const getTimelineData = useMemo(() => {
     const currentStatusIndex = statuses.indexOf(details.service_status);
-    return statuses.map((status, index) => ({
-      title: status,
-      time: '',
-      iconColor: index <= currentStatusIndex ? '#ff4500' : '#a1a1a1',
-      lineColor: index <= currentStatusIndex ? '#ff4500' : '#a1a1a1',
-      isSelectable: index > currentStatusIndex && status !== 'Delivered',
-    }));
-  }, [details.service_status]);
+    return statuses.map((rawStatus, index) => {
+      // Translate for display only.
+      let displayLabel = '';
+      switch (rawStatus) {
+        case 'Collected Item':
+          displayLabel = t('collected_item', 'Collected Item');
+          break;
+        case 'Work started':
+          displayLabel = t('work_started', 'Work started');
+          break;
+        case 'Work Completed':
+          displayLabel = t('work_completed', 'Work Completed');
+          break;
+        case 'Delivered':
+          displayLabel = t('delivered', 'Delivered');
+          break;
+        default:
+          displayLabel = t('on_the_way', 'On the Way');
+          break;
+      }
+      return {
+        rawStatus,
+        title: displayLabel,
+        time: '',
+        iconColor: index <= currentStatusIndex ? '#ff4500' : '#a1a1a1',
+        lineColor: index <= currentStatusIndex ? '#ff4500' : '#a1a1a1',
+        isSelectable: index > currentStatusIndex && rawStatus !== 'Delivered',
+      };
+    });
+  }, [details.service_status, t]);
 
+  // Fetch booking details on mount
   useEffect(() => {
     const fetchBookings = async () => {
-      try { 
-        const { data: { data } } = await axios.post(
-          `https://backend.clicksolver.com/api/service/tracking/worker/item/details`,
+      try {
+        const {
+          data: { data },
+        } = await axios.post(
+          'https://backend.clicksolver.com/api/service/tracking/worker/item/details',
           { tracking_id }
         );
         setDetails(data);
@@ -158,12 +196,13 @@ const ServiceTrackingItemScreen = () => {
         <Icon
           name="arrow-left-long"
           size={styles.headerIconSize}
-          color={isDarkMode ? "#ffffff" : "#212121"}
+          color={isDarkMode ? '#ffffff' : '#212121'}
           style={styles.backIcon}
           onPress={() => navigation.goBack()}
-          
         />
-        <Text style={styles.headerText}>Service Trackings</Text>
+        <Text style={styles.headerText}>
+          {t('service_trackings', 'Service Trackings')}
+        </Text>
       </View>
 
       <ScrollView>
@@ -186,11 +225,13 @@ const ServiceTrackingItemScreen = () => {
 
         {/* Service Details */}
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionBookedTitle}>Service Details</Text>
+          <Text style={styles.sectionBookedTitle}>
+            {t('service_details', 'Service Details')}
+          </Text>
           <View style={styles.innerContainer}>
             {serviceArray.map((service, index) => (
               <Text key={index} style={styles.serviceDetail}>
-                {service.serviceName}
+                {t(`singleService_${service.main_service_id}`) || service.serviceName}
               </Text>
             ))}
           </View>
@@ -201,9 +242,13 @@ const ServiceTrackingItemScreen = () => {
         {/* Service Timeline */}
         <View style={styles.sectionContainer}>
           <View style={styles.serviceTimeLineContainer}>
-            <Text style={styles.sectionTitle}>Service Timeline</Text>
+            <Text style={styles.sectionTitle}>
+              {t('service_timeline', 'Service Timeline')}
+            </Text>
             <TouchableOpacity onPress={handleEditPress}>
-              <Text style={styles.editText}>{isEditVisible ? 'Cancel' : 'Edit'}</Text>
+              <Text style={styles.editText}>
+                {isEditVisible ? t('cancel', 'Cancel') : t('edit', 'Edit')}
+              </Text>
             </TouchableOpacity>
           </View>
           <View style={styles.innerContainerLine}>
@@ -218,19 +263,24 @@ const ServiceTrackingItemScreen = () => {
                   />
                   {index !== getTimelineData.length - 1 && (
                     <View
-                      style={[styles.lineSegment, { backgroundColor: getTimelineData[index + 1].iconColor }]}
+                      style={[
+                        styles.lineSegment,
+                        { backgroundColor: getTimelineData[index + 1].iconColor },
+                      ]}
                     />
                   )}
                 </View>
                 <View style={styles.timelineTextContainer}>
                   <Text style={styles.timelineText}>{item.title}</Text>
-                  <Text style={styles.timelineTime}>{item.time}</Text>
+                  <Text style={styles.timelineTime}>
+                    {item.time ? item.time : t('pending', 'Pending')}
+                  </Text>
                 </View>
                 {isEditVisible && item.isSelectable && (
                   <RadioButton
-                    value={item.title}
-                    status={selectedStatus === item.title ? 'checked' : 'unchecked'}
-                    onPress={() => handleStatusChange(item.title)}
+                    value={item.rawStatus}
+                    status={selectedStatus === item.rawStatus ? 'checked' : 'unchecked'}
+                    onPress={() => handleStatusChange(item.rawStatus)}
                     color="#ff4500"
                   />
                 )}
@@ -243,7 +293,9 @@ const ServiceTrackingItemScreen = () => {
 
         {/* Address */}
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>Address</Text>
+          <Text style={styles.sectionTitle}>
+            {t('address', 'Address')}
+          </Text>
           <View style={styles.addressContainer}>
             <Image
               source={{
@@ -260,7 +312,9 @@ const ServiceTrackingItemScreen = () => {
               style={styles.googleMapsButton}
               onPress={openGoogleMaps}
             >
-              <Text style={styles.googleMapsText}>Google Maps</Text>
+              <Text style={styles.googleMapsText}>
+                {t('google_maps', 'Google Maps')}
+              </Text>
               <MaterialCommunityIcons name="navigation-variant" size={20} color="#C1C1C1" />
             </TouchableOpacity>
           </View>
@@ -268,13 +322,19 @@ const ServiceTrackingItemScreen = () => {
 
         {/* Payment Details */}
         <View style={styles.paymentInnerContainer}>
-          <Text style={styles.sectionPaymentTitle}>Payment Details</Text>
+          <Text style={styles.sectionPaymentTitle}>
+            {t('payment_details', 'Payment Details')}
+          </Text>
         </View>
         <View style={styles.sectionContainer}>
           <View style={styles.PaymentItemContainer}>
             <View style={styles.paymentRow}>
-              <Text style={styles.paymentLabel}>Pay Via Scan</Text>
-              <Text style={styles.paymentValue}>Grand Total ₹{details.total_cost}.00</Text>
+              <Text style={styles.paymentLabel}>
+                {t('pay_via_scan', 'Pay Via Scan')}
+              </Text>
+              <Text style={styles.paymentValue}>
+                {t('grand_total', 'Grand Total')} ₹{details.total_cost}.00
+              </Text>
             </View>
           </View>
         </View>
@@ -282,7 +342,7 @@ const ServiceTrackingItemScreen = () => {
         {/* Swipe Button */}
         <View style={styles.swipeButton}>
           <SwipeButton
-            title="Delivered"
+            title={t('delivered', 'Delivered')}
             titleStyles={{
               color: titleColor,
               fontSize: 16,
@@ -502,8 +562,8 @@ function dynamicStyles(width, isDarkMode) {
     },
     sectionPaymentTitle: {
       fontSize: isTablet ? 18 : 16,
-      fontWeight: 'bold', 
-      color: isDarkMode ? '#ffffff' : '#212121',
+      fontWeight: 'bold',
+      color: isDarkMode ? '#ffffff' : '#212121', 
       marginBottom: 8,
       paddingLeft: isTablet ? 14 : 10,
     },
@@ -544,3 +604,4 @@ function dynamicStyles(width, isDarkMode) {
     },
   });
 }
+ 

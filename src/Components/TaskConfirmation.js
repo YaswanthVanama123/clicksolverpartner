@@ -12,6 +12,8 @@ import Entypo from 'react-native-vector-icons/Entypo';
 import LottieView from 'lottie-react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useTheme } from '../context/ThemeContext';
+// Import translation hook
+import { useTranslation } from 'react-i18next';
 
 const TaskConfirmation = () => {
   const route = useRoute();
@@ -33,6 +35,7 @@ const TaskConfirmation = () => {
 
   const { isDarkMode } = useTheme();
   const styles = dynamicStyles(isDarkMode);
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (encodedId) {
@@ -78,12 +81,12 @@ const TaskConfirmation = () => {
           });
           setServiceArray(workDetails.service_booked);
         } catch (error) {
-          console.error('Error fetching payment details:', error);
+          console.error(t('error_fetching_details', 'Error fetching payment details:'), error);
         }
       };
       fetchPaymentDetails();
     }
-  }, [decodedId]);
+  }, [decodedId, t]);
 
   const handleComplete = async () => {
     const encoded = btoa(decodedId);
@@ -114,7 +117,7 @@ const TaskConfirmation = () => {
         );
       }
     } catch (error) {
-      console.error('Error completing task:', error);
+      console.error(t('error_completing_task', 'Error completing task:'), error);
     }
   };
 
@@ -134,87 +137,85 @@ const TaskConfirmation = () => {
         <Icon name="arrow-back" size={24} color={isDarkMode ? '#ffffff' : '#000000'} />
       </TouchableOpacity>
       <ScrollView>
-      {/* Checkmark Animation */}
-      <LottieView
-        source={require('../assets/success.json')}
-        autoPlay
-        loop
-        style={styles.loadingAnimation}
-      />
+        {/* Checkmark Animation */}
+        <LottieView
+          source={require('../assets/success.json')}
+          autoPlay
+          loop
+          style={styles.loadingAnimation}
+        />
 
+        {/* Title and Subtitle */}
+        <Text style={[styles.title, { color: isDarkMode ? '#ffffff' : '#333333' }]}>
+          {t('work_completion_request', 'Work Completion request !')}
+        </Text>
+        <Text style={[styles.subtitle, { color: isDarkMode ? '#cccccc' : '#666666' }]}>
+          {t('please_confirm_completion', 'Please confirm the completion of the service. Click confirm')}
+        </Text>
 
-
-      {/* Title and Subtitle */}
-      <Text style={[styles.title, { color: isDarkMode ? '#ffffff' : '#333333' }]}>
-        Work Completion request !
-      </Text>
-      <Text style={[styles.subtitle, { color: isDarkMode ? '#cccccc' : '#666666' }]}>
-        Please confirm the completion of the service. Click confirm
-      </Text>
-
-      {/* Payment Summary */}
-      <View style={styles.paymentDetails}>
-        <Text style={styles.detailsText}>Payment Details</Text>
-        <View style={styles.sectionContainer}>
-          <View style={styles.PaymentItemContainer}>
-            {serviceArray.map((service, index) => (
-              <View key={index} style={styles.paymentRow}>
-                <Text style={styles.paymentLabel}>{service.serviceName}</Text>
-                <Text style={styles.paymentValue}>₹{service.cost}.00</Text>
+        {/* Payment Summary */}
+        <View style={styles.paymentDetails}>
+          <Text style={styles.detailsText}>{t('payment_details', 'Payment Details')}</Text>
+          <View style={styles.sectionContainer}>
+            <View style={styles.PaymentItemContainer}>
+              {serviceArray.map((service, index) => (
+                <View key={index} style={styles.paymentRow}>
+                  <Text style={styles.paymentLabel}> { t(`singleService_${service.main_service_id}`) || service.serviceName }</Text>
+                  <Text style={styles.paymentValue}>{service.quantity}</Text>
+                </View> 
+              ))}
+              {/* <View style={styles.paymentRow}>
+                <Text style={styles.paymentLabel}>SGST (5%)</Text>
+                <Text style={styles.paymentValue}>₹0.00</Text>
               </View>
-            ))}
-            <View style={styles.paymentRow}>
-              <Text style={styles.paymentLabel}>SGST (5%)</Text>
-              <Text style={styles.paymentValue}>₹0.00</Text>
-            </View>
-            <View style={styles.paymentRow}>
-              <Text style={styles.paymentLabel}>CGST (5%)</Text>
-              <Text style={styles.paymentValue}>₹0.00</Text>
-            </View>
-            {details.discount > 0 && (
               <View style={styles.paymentRow}>
-                <Text style={styles.paymentLabel}>Cashback (5%)</Text>
-                <Text style={styles.paymentValue}>- ₹{details.discount}.00</Text>
+                <Text style={styles.paymentLabel}>CGST (5%)</Text>
+                <Text style={styles.paymentValue}>₹0.00</Text>
+              </View> */}
+              {details.discount > 0 && (
+                <View style={styles.paymentRow}>
+                  <Text style={styles.paymentLabel}>Cashback (5%)</Text>
+                  <Text style={styles.paymentValue}>- ₹{details.discount}.00</Text>
+                </View>
+              )}
+              <View style={[styles.horizantalLine, { marginTop: 10 }]} />
+              <View style={styles.paymentGrandRow}>
+                <Text style={styles.paymentTotalValue}>
+                  {t('grand_total', 'Grand Total')} ₹{details.totalCost}.00
+                </Text>
               </View>
-            )}
-            <View style={[styles.horizantalLine, { marginTop: 10 }]} />
-            <View style={styles.paymentGrandRow}>
-              <Text style={styles.paymentTotalValue}>
-                Grand Total ₹{details.totalCost}.00
-              </Text>
+              <View style={[styles.horizantalLine]} />
             </View>
-            <View style={[styles.horizantalLine]} />
           </View>
         </View>
-      </View>
 
-      {/* Swipe Button */}
-      <View style={styles.swipeButton}>
-        <SwipeButton
-          title="Completed"
-          titleStyles={{ color: titleColor, fontSize: 16, fontWeight: '500' }}
-          railBackgroundColor="#FF5722"
-          railBorderColor="#FF5722"
-          height={40}
-          railStyles={{
-            borderRadius: 20,
-            backgroundColor: '#FF572200',
-            borderColor: '#FF572200',
-          }}
-          thumbIconComponent={ThumbIcon}
-          thumbIconBackgroundColor="#FFFFFF"
-          thumbIconBorderColor="#FFFFFF"
-          thumbIconWidth={40}
-          thumbIconStyles={{ height: 30, width: 30, borderRadius: 20 }}
-          onSwipeStart={() => setTitleColor('#B0B0B0')}
-          onSwipeSuccess={() => {
-            handleComplete();
-            setTitleColor('#FFFFFF');
-            setSwiped(true);
-          }}
-          onSwipeFail={() => setTitleColor('#FFFFFF')}
-        />
-      </View>
+        {/* Swipe Button */}
+        <View style={styles.swipeButton}>
+          <SwipeButton
+            title={t('completed', 'Completed')}
+            titleStyles={{ color: titleColor, fontSize: 16, fontWeight: '500' }}
+            railBackgroundColor="#FF5722"
+            railBorderColor="#FF5722"
+            height={40}
+            railStyles={{
+              borderRadius: 20,
+              backgroundColor: '#FF572200',
+              borderColor: '#FF572200',
+            }}
+            thumbIconComponent={ThumbIcon}
+            thumbIconBackgroundColor="#FFFFFF"
+            thumbIconBorderColor="#FFFFFF"
+            thumbIconWidth={40}
+            thumbIconStyles={{ height: 30, width: 30, borderRadius: 20 }}
+            onSwipeStart={() => setTitleColor('#B0B0B0')}
+            onSwipeSuccess={() => {
+              handleComplete();
+              setTitleColor('#FFFFFF');
+              setSwiped(true);
+            }}
+            onSwipeFail={() => setTitleColor('#FFFFFF')}
+          />
+        </View>
       </ScrollView>
     </View>
   );
@@ -309,3 +310,4 @@ const dynamicStyles = isDarkMode =>
   });
 
 export default TaskConfirmation;
+ 

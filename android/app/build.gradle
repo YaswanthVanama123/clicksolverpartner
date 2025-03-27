@@ -37,8 +37,11 @@ android {
         applicationId "com.clicksolverpartner"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 121
-        versionName "1.31"
+        versionCode 123
+        versionName "1.33"
+        manifestPlaceholders = [
+        CodePushDeploymentKey: "_NMtmNQ4_A125M3xcDCD01GkmHUFlW-060YNUG" // Replace with your Production key
+    ]
     }
     signingConfigs {
         release {
@@ -94,6 +97,8 @@ dependencies {
 
 apply from: file("../../node_modules/react-native-vector-icons/fonts.gradle")
 apply from: file("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
+apply from: "../../node_modules/react-native-code-push/android/codepush.gradle"
+
 applyNativeModulesAppBuildGradle(project)
 
 // Explicitly declare the dependencies to ensure correct task order

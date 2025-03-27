@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import Entypo from 'react-native-vector-icons/Entypo';
 import EvilIcons from 'react-native-vector-icons/EvilIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AntDesign from 'react-native-vector-icons/AntDesign';
@@ -20,10 +21,11 @@ import axios from 'axios';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LottieView from 'lottie-react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
-// Import global theme hook
 import { useTheme } from '../context/ThemeContext';
+// Import translation hook
+import { useTranslation } from 'react-i18next';
 
-// Helper function to upload image to ImgBB
+/** Helper function to upload image to ImgBB */
 const uploadImage = async (uri) => {
   const apiKey = '287b4ba48139a6a59e75b5a8266bbea2'; // Replace with your ImgBB API key
   const apiUrl = 'https://api.imgbb.com/1/upload';
@@ -56,6 +58,7 @@ const uploadImage = async (uri) => {
 const ProfileScreen = () => {
   const navigation = useNavigation();
   const { isDarkMode, toggleTheme } = useTheme();
+  const { t } = useTranslation();
   const [account, setAccount] = useState({});
   const [image, setImage] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -68,7 +71,6 @@ const ProfileScreen = () => {
   // Fetch profile details only once if account is not already loaded.
   const fetchProfileDetails = async () => {
     try {
-      // Only show the loader if we don't already have profile data.
       if (!account.name) {
         setLoading(true);
       }
@@ -87,7 +89,6 @@ const ProfileScreen = () => {
         { headers: { Authorization: `Bearer ${jwtToken}` } },
       );
 
-      // Destructure profile details from response
       const { name, email, phone_number, profile } = response.data;
       setImage(profile);
       setAccount({
@@ -109,7 +110,6 @@ const ProfileScreen = () => {
     }
   };
 
-  // Use useFocusEffect to load the profile only once if not loaded.
   useFocusEffect(
     useCallback(() => {
       if (!account.name) {
@@ -118,7 +118,6 @@ const ProfileScreen = () => {
     }, [account])
   );
 
-  // Edit / Upload profile image
   const handleEditImage = async () => {
     const options = { mediaType: 'photo', quality: 0.8 };
     launchImageLibrary(options, async (response) => {
@@ -147,7 +146,6 @@ const ProfileScreen = () => {
     });
   };
 
-  // Actual logout function
   const handleLogout = async () => {
     try {
       const keys = [
@@ -176,29 +174,26 @@ const ProfileScreen = () => {
     }
   };
 
-  // Show the bottom-sheet logout modal
   const confirmLogout = () => {
     setLogoutModalVisible(true);
   };
 
-  // Hide the bottom-sheet logout modal
   const closeModal = () => {
     setLogoutModalVisible(false);
   };
 
-  // Render login view if not logged in
   if (!isLoggedIn) {
     return (
       <View style={styles.loginContainer}>
-        <Text style={styles.profileTitle}>Profile</Text>
+        <Text style={styles.profileTitle}>{t('profile', 'Profile')}</Text>
         <TouchableOpacity style={styles.loginButton} onPress={() => navigation.push('Login')}>
-          <Text style={styles.loginButtonText}>Login or Sign up</Text>
+          <Text style={styles.loginButtonText}>{t('login_or_signup', 'Login or Sign up')}</Text>
         </TouchableOpacity>
         <View style={styles.optionsContainer}>
           <View style={styles.menuItem}>
             <Ionicons name={isDarkMode ? 'moon-outline' : 'sunny-outline'} size={22} color={styles.iconColor} />
             <Text style={[styles.menuText, { marginLeft: 12 }]}>
-              {isDarkMode ? 'Dark Theme' : 'Light Theme'}
+              {isDarkMode ? t('dark_theme', 'Dark Theme') : t('light_theme', 'Light Theme')}
             </Text>
             <TouchableOpacity
               style={[
@@ -215,8 +210,8 @@ const ProfileScreen = () => {
               />
             </TouchableOpacity>
           </View>
-          <HelpMenuItem styles={styles} text="Help & Support" onPress={() => navigation.push('Help')} />
-          <AboutCSMenuItem styles={styles} text="About CS" onPress={() => console.log('Navigate to About CS')} />
+          <HelpMenuItem styles={styles} text={t('help_support', 'Help & Support')} onPress={() => navigation.push('Help')} />
+          <AboutCSMenuItem styles={styles} text={t('about_cs', 'About CS')} onPress={() => console.log('Navigate to About CS')} />
         </View>
       </View>
     );
@@ -225,26 +220,18 @@ const ProfileScreen = () => {
   if (loading) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        {/* You can include your loading animation here */}
-        {/* <View style={styles.loadingContainer}>
-          <LottieView
-            source={require('../assets/profileAnimation.json')}
-            autoPlay
-            loop
-            style={styles.loadingAnimation}
-          />
-        </View> */}
+        {/* Optionally include your loading animation */}
       </SafeAreaView>
-    ); 
+    );
   }
 
   if (error) {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Something went wrong. Please try again.</Text>
+          <Text style={styles.errorText}>{t('error_message', 'Something went wrong. Please try again.')}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={fetchProfileDetails}>
-            <Text style={styles.retryButtonText}>Retry</Text>
+            <Text style={styles.retryButtonText}>{t('retry', 'Retry')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -295,7 +282,7 @@ const ProfileScreen = () => {
           <View style={styles.menuItem}>
             <Ionicons name={isDarkMode ? 'moon-outline' : 'sunny-outline'} size={22} color={styles.iconColor} />
             <Text style={[styles.menuText, { marginLeft: 12 }]}>
-              {isDarkMode ? 'Dark Theme' : 'Light Theme'}
+              {isDarkMode ? t('dark_theme', 'Dark Theme') : t('light_theme', 'Light Theme')}
             </Text>
             <TouchableOpacity
               style={[
@@ -314,27 +301,28 @@ const ProfileScreen = () => {
           </View>
 
           {/* Menu Items */}
-          <ProfileMenuItem styles={styles} text="My Services" onPress={() => navigation.push('Services')} />
-          <HelpMenuItem styles={styles} text="Help & Support" onPress={() => navigation.push('Help')} />
-          <EditProfileMenuItem styles={styles} text="Profile" onPress={() => navigation.push('ProfileScreen')} />
-          <LogoutMenuItem styles={styles} text="Logout" onPress={confirmLogout} />
+          <ProfileMenuItem styles={styles} text={t('my_services', 'My Services')} onPress={() => navigation.push('Services')} />
+          <HelpMenuItem styles={styles} text={t('help_support', 'Help & Support')} onPress={() => navigation.push('Help')} />
+          <EditProfileMenuItem styles={styles} text={t('profile', 'Profile')} onPress={() => navigation.push('ProfileScreen')} />
+          <LanguageChangeMenuItem styles={styles} text={t('change_language', 'Language Change')} onPress={() => navigation.push('LanguageSelector')} />
+          <LogoutMenuItem styles={styles} text={t('logout', 'Logout')} onPress={confirmLogout} />
         </View>
       </ScrollView>
 
-      {/* BOTTOM-SHEET LOGOUT CONFIRMATION MODAL */}
+      {/* Bottom-Sheet Logout Confirmation Modal */}
       <Modal visible={logoutModalVisible} animationType="slide" transparent onRequestClose={closeModal}>
         <TouchableOpacity style={styles.bottomSheetOverlay} activeOpacity={1} onPress={closeModal}>
           <View style={styles.bottomSheetContainer}>
             <View style={styles.bottomSheetCard}>
-              <Text style={styles.bottomSheetTitle}>Logout</Text>
+              <Text style={styles.bottomSheetTitle}>{t('confirm_logout', 'Logout')}</Text>
               <Text style={styles.bottomSheetMessage}>
-                Are you sure you want to log out?
+                {t('logout_message', 'Are you sure you want to log out?')}
               </Text>
               <TouchableOpacity style={styles.logoutConfirmButton} onPress={handleLogout}>
-                <Text style={styles.logoutConfirmButtonText}>Yes, Logout</Text>
+                <Text style={styles.logoutConfirmButtonText}>{t('yes_logout', 'Yes, Logout')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.logoutCancelButton} onPress={closeModal}>
-                <Text style={styles.logoutCancelButtonText}>Cancel</Text>
+                <Text style={styles.logoutCancelButtonText}>{t('cancel', 'Cancel')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -372,6 +360,16 @@ const EditProfileMenuItem = ({ text, onPress, styles }) => (
     <Text style={styles.menuText}>{text}</Text>
   </TouchableOpacity>
 );
+
+const LanguageChangeMenuItem = ({ text, onPress, styles }) => (
+  <TouchableOpacity style={styles.menuItem} onPress={onPress}>
+    <Entypo name="language" size={22} color={styles.iconColor} />
+    
+    <Text style={styles.menuText}>{text}</Text>
+  </TouchableOpacity>
+);
+
+
 
 const LogoutMenuItem = ({ text, onPress, styles }) => (
   <TouchableOpacity style={styles.menuItem} onPress={onPress}>
@@ -671,4 +669,3 @@ const dynamicStyles = (isDarkMode) => {
 };
 
 export default ProfileScreen;
- 

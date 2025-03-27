@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Dimensions,
   BackHandler,
+  ScrollView,
 } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
 import Mapbox from '@rnmapbox/maps';
@@ -26,11 +27,14 @@ Mapbox.setAccessToken(
 
 // Import theme hook
 import { useTheme } from '../context/ThemeContext';
+// Import translation hook
+import { useTranslation } from 'react-i18next';
 
 const ServiceCompletionScreen = () => {
   const { width } = Dimensions.get('window');
   const { isDarkMode } = useTheme();
   const styles = dynamicStyles(width, isDarkMode);
+  const { t } = useTranslation();
 
   const {
     params: { encodedId },
@@ -94,12 +98,12 @@ const ServiceCompletionScreen = () => {
           });
           setServiceArray(serviceBooked);
         } catch (error) {
-          console.error('Error fetching payment details:', error);
+          console.error(t('error_fetching_details', 'Error fetching payment details:'), error);
         }
       };
       fetchPaymentDetails();
     }
-  }, [decodedId]);
+  }, [decodedId, t]);
 
   // Handle back press: navigate back to Home screen
   const onBackPress = useCallback(() => {
@@ -122,52 +126,57 @@ const ServiceCompletionScreen = () => {
   const { paymentDetails, totalAmount, center } = locationDetails;
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>
-        Service Completed with {paymentDetails.name}
-      </Text>
-      <Text style={styles.subHeading}>
-        Collected amount in {paymentDetails.payment_type}
-      </Text>
-
-      <View style={styles.amountContainer}>
-        <Text style={styles.amount}>₹{totalAmount}</Text>
-        <Feather name="check-circle" size={22} color="#4CAF50" />
-      </View>
-
-      <Text style={styles.date}>26/04/2023 05:45 PM</Text>
-      <Text style={styles.serviceType}>
-        {serviceArray.map(service => service.serviceName).join(', ')}
-      </Text>
-
-      <View style={styles.locationContainer}>
-        <Image
-          style={styles.locationIcon}
-          source={{
-            uri: 'https://i.postimg.cc/rpb2czKR/1000051859-removebg-preview.png',
-          }}
-        />
-        <Text style={styles.locationText}>
-          {paymentDetails.area}
-          <Text style={styles.time}>, 5:45 PM</Text>
+    <ScrollView>
+      <View style={styles.container}>
+        <Text style={styles.heading}>
+          {t('service_completed_with', 'Service Completed with')} {paymentDetails.name}
         </Text>
-      </View>
+        <Text style={styles.subHeading}>
+          {t('collected_amount_in', 'Collected amount in')} {paymentDetails.payment_type}
+        </Text>
 
-      <Mapbox.MapView style={styles.map}>
-        <Mapbox.Camera zoomLevel={17} centerCoordinate={center} />
-        <Mapbox.PointAnnotation id="current-location" coordinate={center}>
-          <View style={styles.markerContainer}>
-            <Octicons name="dot-fill" size={25} color="#0E52FB" />
-          </View>
-        </Mapbox.PointAnnotation>
-      </Mapbox.MapView>
+        <View style={styles.amountContainer}>
+          <Text style={styles.amount}>₹{totalAmount}</Text>
+          <Feather name="check-circle" size={22} color="#4CAF50" />
+        </View>
 
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.doneButton} onPress={onBackPress}>
-          <Text style={styles.doneText}>Done</Text>
-        </TouchableOpacity>
+        <Text style={styles.date}>{t('completion_date', '26/04/2023 05:45 PM')}</Text>
+        <Text style={styles.serviceType}>
+        {serviceArray.map(service => {
+          return t(`singleService_${service.main_service_id}`) || service.serviceName;
+        }).join(', ')}
+
+        </Text>
+
+        <View style={styles.locationContainer}>
+          <Image
+            style={styles.locationIcon}
+            source={{
+              uri: 'https://i.postimg.cc/rpb2czKR/1000051859-removebg-preview.png',
+            }}
+          />
+          <Text style={styles.locationText}>
+            {paymentDetails.area}
+            <Text style={styles.time}>, {t('completion_time', '5:45 PM')}</Text>
+          </Text>
+        </View>
+
+        <Mapbox.MapView style={styles.map}>
+          <Mapbox.Camera zoomLevel={17} centerCoordinate={center} />
+          <Mapbox.PointAnnotation id="current-location" coordinate={center}>
+            <View style={styles.markerContainer}>
+              <Octicons name="dot-fill" size={25} color="#0E52FB" />
+            </View>
+          </Mapbox.PointAnnotation>
+        </Mapbox.MapView>
+
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity style={styles.doneButton} onPress={onBackPress}>
+            <Text style={styles.doneText}>{t('done', 'Done')}</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
+    </ScrollView>
   );
 };
 

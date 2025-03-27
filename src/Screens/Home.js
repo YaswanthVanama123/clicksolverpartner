@@ -15,6 +15,7 @@ Mapbox.setAccessToken(
   'pk.eyJ1IjoieWFzd2FudGh2YW5hbWEiLCJhIjoiY20ybTMxdGh3MGZ6YTJxc2Zyd2twaWp2ZCJ9.uG0mVTipkeGVwKR49iJTbw',
 );
 import EncryptedStorage from 'react-native-encrypted-storage';
+import Geolocation from '@react-native-community/geolocation';
 import {
   check,
   checkMultiple,
@@ -24,7 +25,7 @@ import {
   PERMISSIONS,
   RESULTS
 } from 'react-native-permissions';
-   
+import { useTranslation } from 'react-i18next';
 import Entypo from 'react-native-vector-icons/Entypo';
 import Octicons from 'react-native-vector-icons/Octicons';
 import AntDesign from 'react-native-vector-icons/AntDesign';
@@ -73,6 +74,7 @@ const HomeScreen = () => {
   const [greetingIcon, setGreetingIcon] = useState(null);
   const [showUpArrow, setShowUpArrow] = useState(false);
   const [showDownArrow, setShowDownArrow] = useState(false);
+  const { t } = useTranslation();
 
   // NEW: For the inspection confirmation modal
   const [inspectionModalVisible, setInspectionModalVisible] = useState(false);
@@ -221,27 +223,23 @@ const HomeScreen = () => {
     // When turning on, verify the location permission is set to "Always"
     if (!isEnabled) {
       let permissionType;
-  
       if (Platform.OS === 'ios') {
-        // iOS: check for "Always" permission
-        // permissionType = PERMISSIONS.IOS.LOCATION_ALWAYS;
+        permissionType = PERMISSIONS.IOS.LOCATION_ALWAYS;
       } else {
         // Android: background location permission is required for "all time" tracking
         permissionType = PERMISSIONS.ANDROID.ACCESS_BACKGROUND_LOCATION;
       }
-  
+    
       const currentStatus = await check(permissionType);
       if (currentStatus !== RESULTS.GRANTED) {
-        // Request the required permission
         const requestedStatus = await request(permissionType);
         if (requestedStatus !== RESULTS.GRANTED) {
-          // Permission not granted, alert the user to update in settings
           Alert.alert(
             'Location Permission Required',
-            'Please set your location permission to "Always" in settings for tracking to work.',
+            'Location permission must be set to "Always" for tracking to work. Please enable it in settings.',
             [
-              { text: 'OK' },
-              // Optionally, you can add a button to open settings using openSettings() from react-native-permissions.
+              { text: 'Retry', onPress: () => toggleSwitch() },
+              { text: 'Cancel', style: 'cancel' },
             ]
           );
           return; // Do not toggle on if permission isn’t granted
@@ -249,7 +247,7 @@ const HomeScreen = () => {
       }
     }
   
-    // Permission is granted, so toggle the switch and update the storage
+    // Permission is granted or turning off, so toggle the switch and update storage
     setIsEnabled((prevState) => {
       const newEnabledState = !prevState;
       EncryptedStorage.setItem('trackingEnabled', JSON.stringify(newEnabledState)).catch((error) => {
@@ -258,6 +256,7 @@ const HomeScreen = () => {
       return newEnabledState;
     });
   };
+    
   
 
   const fetchTrackingState = async () => {
@@ -401,22 +400,21 @@ const HomeScreen = () => {
   // -----------------------------------------------
   const setGreetingBasedOnTime = () => {
     const currentHour = new Date().getHours();
-    let greetingMessage = 'Good Day';
+    let greetingMessage = t('good_day', 'Good Day');
     let icon = <Icon name="sunny-sharp" size={14} color="#ff5722" />;
 
     if (currentHour < 12) {
-      greetingMessage = 'Good Morning';
+      greetingMessage = t('good_morning', 'Good Morning');
       icon = <Icon name="sunny-sharp" size={16} color="#ff5722" />;
     } else if (currentHour < 17) {
-      greetingMessage = 'Good Afternoon';
+      greetingMessage = t('good_afternoon', 'Good Afternoon');
       icon = <Feather name="sunset" size={16} color="#ff5722" />;
     } else {
-      greetingMessage = 'Good Evening';
+      greetingMessage = t('good_evening', 'Good Evening');
       icon = <MaterialIcons name="nights-stay" size={16} color="#F24E1E" />;
     }
-
     setGreeting(greetingMessage);
-    setGreetingIcon(icon);
+    setGreetingIcon(icon); 
   };
 
   // -----------------------------------------------
@@ -752,7 +750,7 @@ const HomeScreen = () => {
   </View>
           <View style={styles.innerSwitch}>
             <View style={styles.workStatusContainer}>
-              <Text style={styles.workStatus}>Active</Text>
+              <Text style={styles.workStatus}>{t('active', 'Active')}</Text>
             </View>
             <View style={styles.container}>
               <TouchableOpacity
@@ -769,7 +767,8 @@ const HomeScreen = () => {
                   ]}
                 />
               </TouchableOpacity>
-              <Text style={styles.status}>{isEnabled ? 'On' : 'Off'}</Text>
+              <Text style={styles.status}>{isEnabled ? t('on_label', 'On') : t('off_label', 'Off')}</Text>
+
             </View>
           </View>
           <View>
@@ -785,7 +784,7 @@ const HomeScreen = () => {
           <Text style={styles.greetingText}>
             {greeting} <Text style={styles.greetingIcon}>{greetingIcon}</Text>
           </Text>
-          <Text style={styles.userName}>Yaswanth</Text>
+          <Text style={styles.userName}>Yash</Text>
         </View>
         <View style={styles.moneyContainer}>
           <TouchableOpacity onPress={balanceScreen}>
@@ -795,7 +794,7 @@ const HomeScreen = () => {
                 size={20}
                 color="#4a4a4a"
               />
-              <Text style={styles.balanceText}>Balance</Text>
+              <Text style={styles.balanceText}>{t('balance', 'Balance')}</Text>
               <Entypo
                 name="chevron-small-down"
                 size={20}
@@ -807,7 +806,7 @@ const HomeScreen = () => {
           <TouchableOpacity onPress={earningsScreen}>
             <View style={styles.balanceContainer}>
               <FontAwesome name="money" size={20} color="#4a4a4a" />
-              <Text style={styles.balanceText}>Earnings</Text>
+              <Text style={styles.balanceText}>{t('earnings', 'Earnings')}</Text>
               <Entypo
                 name="chevron-small-down"
                 size={20}
@@ -874,7 +873,7 @@ const HomeScreen = () => {
         </Mapbox.MapView>
       </>
     ) : (
-      <Text style={styles.message}>Please click the switch on</Text>
+      <Text style={styles.message}>{t('switch_on_message', 'Please click the switch on')}</Text>
     )}
 
 
@@ -900,7 +899,7 @@ const HomeScreen = () => {
               <View key={index} style={styles.messageBox}>
                 <View style={styles.serviceCostContainer}>
                   <View style={styles.serviceContainer}>
-                    <Text style={styles.secondaryColor}>Service</Text>
+                    <Text style={styles.secondaryColor}>{t('service', 'Service')}</Text>
                     <View style={{ position: 'relative' }}>
                       {showUpArrow && (
                         <View style={styles.arrowUpContainer}>
@@ -921,14 +920,15 @@ const HomeScreen = () => {
                         {Array.isArray(parsedTitle) ? (
                           parsedTitle.map((service, serviceIndex) => (
                             <Text key={serviceIndex} style={styles.primaryColor}>
-                              {service.serviceName}
+                              { t(`singleService_${service.main_service_id}`) || service.serviceName }
+                            
                               {serviceIndex < parsedTitle.length - 1
                                 ? ', '
                                 : ''}
                             </Text>
                           ))
                         ) : (
-                          <Text>No services available</Text>
+                          <Text>{t('no_services', 'No services available')}</Text>
                         )}
                       </ScrollView>
 
@@ -944,13 +944,13 @@ const HomeScreen = () => {
                     </View>
                   </View>
                   <View>
-                    <Text style={styles.secondaryColor}>Cost</Text>
+                    <Text style={styles.secondaryColor}>{t('cost', 'Cost')}</Text>
                     <Text style={styles.primaryColor}>₹{cost}</Text>
                   </View>
                 </View>
                 <View style={styles.addressContainer}>
                   <View>
-                    <Text style={styles.secondaryColor}>Location</Text>
+                    <Text style={styles.secondaryColor}>{t('location', 'Location')}</Text>
                     <Text style={styles.address}>
                       {notification.data.location}
                     </Text>
@@ -970,7 +970,7 @@ const HomeScreen = () => {
                       acceptRequest(notification.data.user_notification_id)
                     }
                   >
-                    <Text style={styles.secondaryButtonText}>Accept</Text>
+                    <Text style={styles.secondaryButtonText}>{t('accept', 'Accept')}</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -1005,18 +1005,18 @@ const HomeScreen = () => {
             <View>
               {screenName === 'Paymentscreen' ? (
                 <Text style={styles.textContainerText}>
-                  Payment in progress
+                  {t('payment_in_progress', 'Payment in progress')}
                 </Text>
               ) : screenName === 'UserNavigation' ? (
                 <Text style={styles.textContainerText}>
-                  User is waiting for your help
+                  {t('waiting_for_help', 'User is waiting for your help')}
                 </Text>
               ) : screenName === 'OtpVerification' ? (
                 <Text style={styles.textContainerText}>
-                  User is waiting for your help
+                  {t('waiting_for_help', 'User is waiting for your help')}
                 </Text>
               ) : screenName === 'worktimescreen' ? (
-                <Text style={styles.textContainerText}>Work in progress</Text>
+                <Text style={styles.textContainerText}>{t('work_in_progress', 'Work in progress')}</Text>
               ) : (
                 <Text style={styles.textContainerText}>Nothing</Text>
               )}
@@ -1037,9 +1037,10 @@ const HomeScreen = () => {
       >
         <View style={styles.modalBackdrop}>
           <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Active Service</Text>
+            <Text style={styles.modalTitle}>{t('active_service_title', 'Active Service')}</Text>
             <Text style={styles.modalMessage}>
-              You are already engaged with another service.
+              {t('active_service_message', 'You are already engaged with another service.')}
+          
             </Text>
             <TouchableOpacity
               style={styles.modalButton}
@@ -1060,11 +1061,12 @@ const HomeScreen = () => {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Inspection Confirmation</Text>
+            <Text style={styles.modalTitle}>{t('inspection_confirmation', 'Inspection Confirmation')}</Text>
             <Text style={styles.modalMessage}>
-              The service request includes an inspection.
-              {'\n'}Inspection fee is ₹49. If you are comfortable with just
-              inspecting, click "Sure" to accept. Otherwise, click "Cancel".
+            {t(
+                'inspection_message',
+                'This request includes an inspection. Fee is ₹49. If you are comfortable just inspecting, click "Sure". Otherwise, click "Cancel".'
+              )}
             </Text>
             <View style={styles.modalButtonsRow}>
               <TouchableOpacity
@@ -1074,13 +1076,13 @@ const HomeScreen = () => {
                   setInspectionModalVisible(false);
                 }}
               >
-                <Text style={styles.modalButtonText}>Sure</Text>
+                <Text style={styles.modalButtonText}>{t('sure', 'Sure')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalButton, styles.modalCancelButton]}
                 onPress={() => setInspectionModalVisible(false)}
               >
-                <Text style={styles.modalButtonText}>Cancel</Text>
+                <Text style={styles.modalButtonText}>{t('cancel', 'Cancel')}</Text>
               </TouchableOpacity>
             </View>
           </View>

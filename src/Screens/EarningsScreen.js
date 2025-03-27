@@ -19,14 +19,16 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Feather from 'react-native-vector-icons/Feather';
 import axios from 'axios';
 import DestinationCircles from '../Components/DestinationCircles';
-// Import theme hook to get isDarkMode value
 import { useTheme } from '../context/ThemeContext';
+// Import translation hook
+import { useTranslation } from 'react-i18next';
 
 const EarningsScreen = () => {
   const { width } = useWindowDimensions();
   const { isDarkMode } = useTheme();
-  // Pass isDarkMode to dynamicStyles to generate themed styles
   const styles = dynamicStyles(width, isDarkMode);
+  const navigation = useNavigation();
+  const { t } = useTranslation();
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedPeriod, setSelectedPeriod] = useState('Today');
@@ -48,7 +50,6 @@ const EarningsScreen = () => {
     cashback_pending: 0,
   });
   const [loading, setLoading] = useState(false);
-  const navigation = useNavigation();
 
   // Date range states
   const [startDate, setStartDate] = useState(null);
@@ -123,19 +124,20 @@ const EarningsScreen = () => {
         return true;
       };
       BackHandler.addEventListener('hardwareBackPress', onBackPress);
-      return () => BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+      return () =>
+        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
     }, [navigation])
   );
 
   const handleTabClick = (period) => {
     setSelectedPeriod(period);
-    if (period === 'Today') {
+    if (period === t('today', 'Today')) {
       const today = new Date();
       setSelectedDate(today);
       setStartDate(null);
       setEndDate(null);
       partnerEarnings(today);
-    } else if (period === 'This Week') {
+    } else if (period === t('this_week', 'This Week')) {
       const startOfWeek = new Date();
       const day = startOfWeek.getDay();
       startOfWeek.setDate(startOfWeek.getDate() - day);
@@ -146,7 +148,7 @@ const EarningsScreen = () => {
       setStartDate(startOfWeek);
       setEndDate(endOfWeek);
       partnerEarnings(startOfWeek, endOfWeek);
-    } else if (period === 'Select Date') {
+    } else if (period === t('select_date', 'Select Date')) {
       setStartDate(null);
       setEndDate(null);
       setShowCalendar(true);
@@ -222,7 +224,11 @@ const EarningsScreen = () => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={backToHome} style={styles.leftIcon}>
-          <FontAwesome6 name="arrow-left-long" size={24} color={isDarkMode ? "#ffffff" : "#4a4a4a"} />
+          <FontAwesome6
+            name="arrow-left-long"
+            size={24}
+            color={isDarkMode ? "#ffffff" : "#4a4a4a"}
+          />
         </TouchableOpacity>
         <View style={styles.earningsIconContainer}>
           <FontAwesome6
@@ -231,16 +237,21 @@ const EarningsScreen = () => {
             color="#FF5722"
             style={styles.EarningIcon}
           />
-          <Text style={styles.screenName}>Earnings</Text>
+          <Text style={styles.screenName}>
+            {t('earnings', 'Earnings')}
+          </Text>
         </View>
       </View>
 
       {/* Tabs */}
       <View style={styles.tabs}>
-        {['Today', 'This Week', 'Select Date'].map((period) => (
+        {[t('today', 'Today'), t('this_week', 'This Week'), t('select_date', 'Select Date')].map((period) => (
           <TouchableOpacity
             key={period}
-            style={[styles.tab, selectedPeriod === period && styles.tabActive]}
+            style={[
+              styles.tab,
+              selectedPeriod === period && styles.tabActive,
+            ]}
             onPress={() => handleTabClick(period)}
           >
             <Text
@@ -276,9 +287,10 @@ const EarningsScreen = () => {
         {isMessageVisible && (
           <View style={styles.messageBox}>
             <Text style={styles.messageText}>
-              You are viewing the earnings for {selectedPeriod}
-              {selectedPeriod === 'Select Date' && startDate && endDate
-                ? ` from ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()}`
+              {t('viewing_earnings', 'You are viewing the earnings for')}{' '}
+              {selectedPeriod}
+              {selectedPeriod === t('select_date', 'Select Date') && startDate && endDate
+                ? ` ${t('from', 'from')} ${startDate.toLocaleDateString()} ${t('to', 'to')} ${endDate.toLocaleDateString()}`
                 : ''}
             </Text>
           </View>
@@ -286,7 +298,9 @@ const EarningsScreen = () => {
 
         <View style={styles.horizontalLine} />
         <View style={styles.cashContainer}>
-          <Text style={styles.cashCollectedText}>Cash collected</Text>
+          <Text style={styles.cashCollectedText}>
+            {t('cash_collected', 'Cash collected')}
+          </Text>
           <Text style={styles.cashCollectedAmount}>
             <Text style={styles.rupeeIcon}>₹ </Text>
             {earnings.cash_payment}
@@ -294,7 +308,9 @@ const EarningsScreen = () => {
         </View>
       </View>
 
-      <Text style={styles.cashBackAmount}>Cash back ₹100</Text>
+      <Text style={styles.cashBackAmount}>
+        {t('cash_back', 'Cash back')} ₹100
+      </Text>
       <View style={styles.completedCircle}>
         <DestinationCircles complete={earnings.cashback} />
       </View>
@@ -305,15 +321,17 @@ const EarningsScreen = () => {
         showsVerticalScrollIndicator={false}
       >
         {[
-          { value: earnings.payment_count, title: 'Services', color: '#4CAF50' },
-          { value: earnings.life_earnings, title: 'Total Earnings', color: '#4CAF50' },
-          { value: earnings.cashback_gain, title: 'Cashback Earned', color: '#4CAF50' },
-          { value: earnings.avgrating, title: 'Avg Rating', color: '#4CAF50' },
-          { value: earnings.rejectedcount, title: 'Rejected', color: '#ff4436' },
-          { value: earnings.cashback_pending, title: 'Cashback pending', color: '#ffa500' },
+          { value: earnings.payment_count, title: t('services', 'Services'), color: '#4CAF50' },
+          { value: earnings.life_earnings, title: t('total_earnings', 'Total Earnings'), color: '#4CAF50' },
+          { value: earnings.cashback_gain, title: t('cashback_earned', 'Cashback Earned'), color: '#4CAF50' },
+          { value: earnings.avgrating, title: t('avg_rating', 'Avg Rating'), color: '#4CAF50' },
+          { value: earnings.rejectedcount, title: t('rejected', 'Rejected'), color: '#ff4436' },
+          { value: earnings.cashback_pending, title: t('cashback_pending', 'Cashback pending'), color: '#ffa500' },
         ].map((stat, index) => (
           <View key={index} style={[styles.statBox, { borderLeftColor: stat.color }]}>
-            <Text style={[styles.statValue, { color: stat.color }]}>{stat.value}</Text>
+            <Text style={[styles.statValue, { color: stat.color }]}>
+              {stat.value}
+            </Text>
             <Text style={styles.statTitle}>{stat.title}</Text>
           </View>
         ))}

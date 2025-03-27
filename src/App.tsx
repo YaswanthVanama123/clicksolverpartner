@@ -5,6 +5,7 @@ import { NavigationContainer, CommonActions, NavigationContainerRef } from '@rea
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import messaging from '@react-native-firebase/messaging';
+import './i18n/i18n';
 import axios from 'axios';
 import EncryptedStorage from 'react-native-encrypted-storage';
 import SplashScreen from 'react-native-splash-screen';
@@ -17,6 +18,7 @@ import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import { request, PERMISSIONS, requestNotifications } from 'react-native-permissions';
 
 // Import your components/screens
+import LanguageSelector from './Components/LanguageSelector';
 import RecentServices from './Components/RecentServices';
 import Profile from './Components/Profile';
 import PartnerSteps from './Components/PartnerSteps';
@@ -57,6 +59,7 @@ import HomeComponent from './Screens/HomeComponent';
 import WorkerOtpVerificationScreen from './Components/WorkerOtpVerificationScreen';
 import ProfileChange from './Components/ProfileChange';
 import PaymentConfirmationScreen from './Components/PaymentConfirmationScreen';
+import { useTranslation } from 'react-i18next';
 
 // Import the ThemeProvider and hook
 import { ThemeProvider, useTheme } from './context/ThemeContext';
@@ -67,6 +70,18 @@ import WorkerHelpScreen from './Components/HelpScreen';
 
 // NEW: Import the global notification event emitter
 import notificationEventEmitter from './utils/NotificationEmitter'; // Adjust the path based on your structure
+// NEW: Import CodePush from react-native-code-push
+import CodePush from 'react-native-code-push';
+
+
+// Define your deployment key and options for CodePush.
+// Replace 'YOUR_PRODUCTION_KEY' with your actual key. Optionally, include serverUrl if using a self-hosted CodePush server.
+const codePushOptions = {
+  checkFrequency: CodePush.CheckFrequency.ON_APP_START,
+  deploymentKey: '_NMtmNQ4_A125M3xcDCD01GkmHUFlW-060YNUG',
+  // Uncomment the next line if you have a custom server URL:
+  // serverUrl: 'http://<YOUR_SERVER_IP>:3000',
+};
 
 // Define your Stack and Tab navigators
 const Stack = createNativeStackNavigator();
@@ -74,10 +89,11 @@ const Tab = createBottomTabNavigator();
 
 function TabNavigator() {
   const { isDarkMode } = useTheme();
+  const { t } = useTranslation();
   const tabBarBackground = isDarkMode ? '#333' : '#fff';
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={{ flex: 1 }}>
       <Tab.Navigator
         screenOptions={({ route }) => ({
           tabBarIcon: ({ focused, color, size }) => {
@@ -100,9 +116,7 @@ function TabNavigator() {
           },
           tabBarActiveTintColor: '#ff4500',
           tabBarInactiveTintColor: 'gray',
-          tabBarLabelStyle: {
-            fontSize: 12,
-          },
+          tabBarLabelStyle: { fontSize: 12 },
           tabBarStyle: {
             height: 60,
             paddingBottom: 5,
@@ -111,10 +125,38 @@ function TabNavigator() {
           },
         })}
       >
-        <Tab.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
-        <Tab.Screen name="Bookings" component={RecentServices} options={{ headerShown: false }} />
-        <Tab.Screen name="Tracking" component={ServiceTrackingListScreen} options={{ headerShown: false }} />
-        <Tab.Screen name="Account" component={ProfileScreen} options={{ headerShown: false }} />
+        <Tab.Screen
+          name="Home"
+          component={HomeScreen}
+          options={{ 
+            headerShown: false,
+            tabBarLabel: t('tab_home', 'Home'),
+          }}
+        />
+        <Tab.Screen
+          name="Bookings"
+          component={RecentServices}
+          options={{ 
+            headerShown: false,
+            tabBarLabel: t('tab_bookings', 'Bookings'),
+          }}
+        />
+        <Tab.Screen
+          name="Tracking"
+          component={ServiceTrackingListScreen}
+          options={{ 
+            headerShown: false,
+            tabBarLabel: t('tab_tracking', 'Tracking'),
+          }}
+        />
+        <Tab.Screen
+          name="Account"
+          component={ProfileScreen}
+          options={{ 
+            headerShown: false,
+            tabBarLabel: t('tab_account', 'Account'),
+          }}
+        />
       </Tab.Navigator>
     </SafeAreaView>
   );
@@ -124,6 +166,15 @@ function AppContent() {
   const navigationRef = useRef<NavigationContainerRef>(null);
   const [initialRoute, setInitialRoute] = useState<string | null>(null);
   const { isDarkMode } = useTheme();
+
+
+  useEffect(() => {
+    // Check for CodePush updates when the app starts
+    CodePush.sync({
+      installMode: CodePush.InstallMode.IMMEDIATE, // Apply updates immediately
+      updateDialog: true, // Show a dialog before updating
+    });
+  }, []);
 
   // Handler for force logout
   const handleForceLogout = async () => {
@@ -515,6 +566,10 @@ function AppContent() {
         <Stack.Screen name="ServiceInProgress" component={ServiceInProgress} options={{ title: 'ServiceInProgress', headerShown: false }} />
         <Stack.Screen name="ServiceBookingOngoingItem" component={ServiceBookingOngoingItem} options={{ title: 'ServiceBookingOngoingItem', headerShown: false }} />
         <Stack.Screen name="ChatScreen" component={ChatScreen} options={{ title: 'ServiceBookingOngoingItem', headerShown: false }} />
+        <Stack.Screen name="LanguageSelector" component={LanguageSelector} options={{ title: 'LanguageSelector', headerShown: false }} />
+
+
+        
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -545,10 +600,13 @@ const styles = StyleSheet.create({
   },
 });
 
+// Wrap your App with CodePush
+const CodePushApp = CodePush(codePushOptions)(App);
+
 export default function Root() {
   return (
     <ThemeProvider>
-      <App />
+      <CodePushApp />
     </ThemeProvider>
   );
 }

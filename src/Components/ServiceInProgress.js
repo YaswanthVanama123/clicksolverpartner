@@ -27,12 +27,14 @@ import { launchCamera } from 'react-native-image-picker';
 import { Dropdown } from 'react-native-element-dropdown';
 import SwipeButton from 'rn-swipe-button';
 import Entypo from 'react-native-vector-icons/Entypo';
-
-// Import theme hook
 import { useTheme } from '../context/ThemeContext';
+import polyline from '@mapbox/polyline';
+
+// Import translation hook
+import { useTranslation } from 'react-i18next';
 
 const ServiceInProgressScreen = () => {
-  // State variables
+  // States for decoded id and service data
   const [decodedId, setDecodedId] = useState(null);
   const [services, setServices] = useState([]);
   const [area, setArea] = useState('');
@@ -49,23 +51,21 @@ const ServiceInProgressScreen = () => {
   const [titleColor, setTitleColor] = useState('#FFFFFF');
   const [swiped, setSwiped] = useState(false);
 
-  // Status mappings
+  // Status mappings with translation
   const statuses = ['In Progress', 'Work started', 'Work Completed'];
   const statusKeys = ['accept', 'arrived', 'workCompleted'];
+  const { t } = useTranslation();
   const statusDisplayNames = {
-    accept: 'In Progress',
-    arrived: 'Work started',
-    workCompleted: 'Work Completed',
+    accept: t('in_progress', 'In Progress'),
+    arrived: t('work_started', 'Work started'),
+    workCompleted: t('work_completed', 'Work Completed'),
   };
 
-  // Navigation and route
   const route = useRoute();
   const navigation = useNavigation();
   const { encodedId } = route.params;
 
-  // Get current theme mode from our Theme Context
   const { isDarkMode } = useTheme();
-  // Generate dynamic styles
   const styles = dynamicStyles(isDarkMode);
 
   useEffect(() => {
@@ -88,8 +88,6 @@ const ServiceInProgressScreen = () => {
         );
         const data = response.data[0];
         console.log('Fetched Data:', data);
-
-        // Map service_booked and service_status to services
         const mappedServices = data.service_booked.map(serviceBookedItem => {
           const serviceStatusItem = data.service_status.find(
             statusItem =>
@@ -150,32 +148,7 @@ const ServiceInProgressScreen = () => {
     return 'pending';
   };
 
-  // Handle service completion
-  // const handleServiceCompletion = async () => {
-  //   try {
-  //     await axios.post(`https://backend.clicksolver.com/api/worker/update/status`, {
-  //       decodedId,
-  //       statusKey: 'workCompleted',
-  //       newStatusValue: statusDisplayNames['workCompleted'],
-  //     });
-  //     setServices(prevServices =>
-  //       prevServices.map(service => {
-  //         if (service.id === editingServiceId) {
-  //           const updatedStatus = { ...service.status };
-  //           updatedStatus.workCompleted = statusDisplayNames['workCompleted'];
-  //           return { ...service, status: updatedStatus };
-  //         }
-  //         return service;
-  //       })
-  //     );
-  //     Alert.alert('Service Completed', 'You have marked the service as completed.');
-  //   } catch (error) {
-  //     console.error('Error updating service completion:', error);
-  //     Alert.alert('Error', 'Failed to update service completion.');
-  //   }
-  // };
-
-  // Edit button press handler
+  // Handle edit press for a service
   const handleEditPress = serviceId => {
     if (editingServiceId === serviceId) {
       setEditingServiceId(null);
@@ -188,11 +161,11 @@ const ServiceInProgressScreen = () => {
   const handleStatusChange = (serviceId, statusKey) => {
     const statusName = statusDisplayNames[statusKey];
     Alert.alert(
-      'Confirm Status Change',
-      `Are you sure you want to change the status to "${statusName}"?`,
+      t('confirm_status_change', 'Confirm Status Change'),
+      t('confirm_status_message', `Are you sure you want to change the status to "${statusName}"?`),
       [
-        { text: 'No', onPress: () => {}, style: 'cancel' },
-        { text: 'Yes', onPress: () => applyStatusChange(serviceId, statusKey) },
+        { text: t('no', 'No'), onPress: () => {}, style: 'cancel' },
+        { text: t('yes', 'Yes'), onPress: () => applyStatusChange(serviceId, statusKey) },
       ]
     );
   };
@@ -242,10 +215,8 @@ const ServiceInProgressScreen = () => {
     setReasonModalVisible(false);
   };
 
-  const openConfirmationModal = reason => {
-    setSelectedReason(reason);
+  const openConfirmationModal = () => {
     setConfirmationModalVisible(true);
-    console.log('Selected Reason:', reason);
   };
 
   const closeConfirmationModal = () => {
@@ -269,7 +240,6 @@ const ServiceInProgressScreen = () => {
         const uri = response.assets[0].uri;
         try {
           const uploadedUrl = await uploadImage(uri);
-          console.log('Image', uploadedUrl);
           setImageUri(uploadedUrl);
         } catch (error) {
           console.error('Image upload failed:', error);
@@ -314,32 +284,37 @@ const ServiceInProgressScreen = () => {
     const formattedDate = date.toLocaleDateString('en-US', options);
     const hours = date.getHours().toString().padStart(2, '0');
     const minutes = date.getMinutes().toString().padStart(2, '0');
-    return `${formattedDate} at ${hours}:${minutes}`;
+    return `${formattedDate} ${t('at', 'at')} ${hours}:${minutes}`;
   };
 
   const confirmWorkPlace = async () => {
     if (accept) {
-      const details = {
+      const detailsObj = {
         reason: selectedReason,
         estimatedDuration,
         image: imageUri,
         termsAccepted: accept,
       };
-      console.log('Details:', details);
+      console.log('Details:', detailsObj);
       setErrorText('');
       setConfirmationModalVisible(false);
       setReasonModalVisible(false);
       try {
         const response = await axios.post(
           `https://backend.clicksolver.com/api/add/tracking`,
-          { notification_id: decodedId, details }
+          { notification_id: decodedId, details: detailsObj }
         );
         console.log('Response:', response);
         if (response.status === 201) {
-          navigation.dispatch( 
+          navigation.dispatch(
             CommonActions.reset({
               index: 0,
-              routes: [{ name: 'Tabs', state: { routes: [{ name: 'Home' }] } }],
+              routes: [
+                {
+                  name: 'Tabs',
+                  state: { index: 0, routes: [{ name: 'Home' }] },
+                },
+              ],
             })
           );
         }
@@ -347,15 +322,15 @@ const ServiceInProgressScreen = () => {
         console.error('Error posting work shift: ', error);
       }
     } else {
-      setErrorText('You need to accept the terms and conditions.');
+      setErrorText(t('accept_terms_error', 'You need to accept the terms and conditions.'));
     }
   };
 
   const durationOptions = [
-    { label: '1 day', value: '1' },
-    { label: '2 days', value: '2' },
-    { label: '3 days', value: '3' },
-    { label: '4 days', value: '4' },
+    { label: t('one_day', '1 day'), value: '1' },
+    { label: t('two_days', '2 days'), value: '2' },
+    { label: t('three_days', '3 days'), value: '3' },
+    { label: t('four_days', '4 days'), value: '4' },
   ];
 
   // Memoized thumb icon for swipe button
@@ -380,7 +355,12 @@ const ServiceInProgressScreen = () => {
         navigation.dispatch(
           CommonActions.reset({
             index: 0,
-            routes: [{ name: 'Tabs', state: { routes: [{ name: 'Home' }] } }],
+            routes: [
+              {
+                name: 'Tabs',
+                state: { index: 0, routes: [{ name: 'Home' }] },
+              },
+            ],
           })
         );
         return true;
@@ -403,19 +383,24 @@ const ServiceInProgressScreen = () => {
             navigation.dispatch(
               CommonActions.reset({
                 index: 0,
-                routes: [{ name: 'Tabs', state: { routes: [{ name: 'Home' }] } }],
+                routes: [
+                  {
+                    name: 'Tabs',
+                    state: { index: 0, routes: [{ name: 'Home' }] },
+                  },
+                ],
               })
             );
           }}
         />
-        <Text style={styles.headerText}>Service In Progress</Text>
+        <Text style={styles.headerText}>{t('service_in_progress', 'Service In Progress')}</Text>
       </View>
 
       <ScrollView style={styles.container}>
         {/* Service Details */}
         <View style={styles.serviceDetailsContainer}>
           <View style={styles.serviceDetailsHeaderContainer}>
-            <Text style={styles.serviceDetailsTitle}>Service Details</Text>
+            <Text style={styles.serviceDetailsTitle}>{t('service_details', 'Service Details')}</Text>
             <TouchableOpacity>
               <Icon name="keyboard-arrow-right" size={24} color="#ff4500" />
             </TouchableOpacity>
@@ -424,7 +409,7 @@ const ServiceInProgressScreen = () => {
             <View style={styles.detailsRow}>
               <Icon name="calendar-today" size={20} color="#ff4500" />
               <Text style={styles.detailText}>
-                Work started{' '}
+                {t('work_started', 'Work started')}{' '}
                 <Text style={styles.highLightText}>
                   {new Date(createdAt).toLocaleString()}
                 </Text>
@@ -433,7 +418,8 @@ const ServiceInProgressScreen = () => {
             <View style={styles.detailsRow}>
               <Icon name="location-on" size={20} color="#ff4500" />
               <Text style={styles.detailText}>
-                Location: <Text style={styles.highLightText}>{area}</Text>
+                {t('location', 'Location:')}{' '}
+                <Text style={styles.highLightText}>{area}</Text>
               </Text>
             </View>
           </View>
@@ -446,28 +432,30 @@ const ServiceInProgressScreen = () => {
                   <View style={styles.technicianContainer}>
                     <Image source={{ uri: service.image }} style={styles.technicianImage} />
                     <View style={styles.technicianDetails}>
-                      <Text style={styles.technicianName}>{service.name}</Text>
-                      <Text style={styles.technicianTitle}>Quantity: {service.quantity}</Text>
+                      <Text style={styles.technicianName}>{ t(`singleService_${service.id}`) || service.name }</Text>
+                      <Text style={styles.technicianTitle}>
+                        {t('quantity', 'Quantity')}: {service.quantity}
+                      </Text>
                     </View>
                   </View>
                   <Text style={styles.statusText}>
-                    Service Status:{' '}
+                    {t('service_status', 'Service Status')}: {' '}
                     <Text style={styles.highLightText}>
-                      {statusDisplayNames[currentStatus] || 'Pending'}
+                      {statusDisplayNames[currentStatus] || t('pending', 'Pending')}
                     </Text>
                   </Text>
                   <Text style={styles.statusText}>
-                    Estimated Completion:{' '}
-                    <Text style={styles.highLightText}>2 hours</Text>
+                    {t('estimated_completion', 'Estimated Completion')}: {' '}
+                    <Text style={styles.highLightText}>2 {t('hours', 'hours')}</Text>
                   </Text>
                   {/* Timeline Section */}
                   <View style={styles.sectionContainer}>
                     <View style={styles.serviceTimeLineContainer}>
-                      <Text style={styles.sectionTitle}>Service Timeline</Text>
+                      <Text style={styles.sectionTitle}>{t('service_timeline', 'Service Timeline')}</Text>
                       {currentStatus !== 'workCompleted' && (
                         <TouchableOpacity onPress={() => handleEditPress(service.id)}>
                           <Text style={styles.editText}>
-                            {editingServiceId === service.id ? 'Cancel' : 'Edit'}
+                            {editingServiceId === service.id ? t('cancel', 'Cancel') : t('edit', 'Edit')}
                           </Text>
                         </TouchableOpacity>
                       )}
@@ -494,15 +482,13 @@ const ServiceInProgressScreen = () => {
                             <View style={styles.timelineTextContainer}>
                               <Text style={styles.timelineText}>{item.title}</Text>
                               <Text style={styles.timelineTime}>
-                                {item.statusValue || 'Pending'}
+                                {item.statusValue || t('pending', 'Pending')}
                               </Text>
                             </View>
                             {editingServiceId === service.id && !item.statusValue && (
                               <RadioButton
                                 value={item.key}
-                                status={
-                                  editingSelectedStatus === item.key ? 'checked' : 'unchecked'
-                                }
+                                status={editingSelectedStatus === item.key ? 'checked' : 'unchecked'}
                                 onPress={() => {
                                   setEditingSelectedStatus(item.key);
                                   handleStatusChange(service.id, item.key);
@@ -524,7 +510,7 @@ const ServiceInProgressScreen = () => {
         {/* Work in my place Button */}
         <View style={styles.swipeButton}>
           <SwipeButton
-            title="Work in my place"
+            title={t('work_in_my_place', 'Work in my place')}
             titleStyles={{ color: titleColor, fontSize: 16, fontWeight: '500' }}
             railBackgroundColor="#FF5722"
             railBorderColor="#FF5722"
@@ -564,42 +550,42 @@ const ServiceInProgressScreen = () => {
           <View style={styles.modalContainer}>
             <View style={styles.heading}>
               <Text style={styles.modalTitle}>
-                What is the reason for taking this repair off-site?
+                {t('cancel_reason_title', 'What is the reason for taking this repair off-site?')}
               </Text>
             </View>
             <TouchableOpacity
               style={styles.reasonButton}
-              onPress={() => openConfirmationModal('Specialized Equipment Needed')}
+              onPress={() => openConfirmationModal(t('reason_specialized_equipment', 'Specialized Equipment Needed'))}
             >
-              <Text style={styles.reasonText}>Specialized Equipment Needed</Text>
+              <Text style={styles.reasonText}>{t('reason_specialized_equipment', 'Specialized Equipment Needed')}</Text>
               <AntDesign name="right" size={16} color="#4a4a4a" />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.reasonButton}
-              onPress={() => openConfirmationModal('Complex Repair')}
+              onPress={() => openConfirmationModal(t('reason_complex_repair', 'Complex Repair'))}
             >
-              <Text style={styles.reasonText}>Complex Repair</Text>
+              <Text style={styles.reasonText}>{t('reason_complex_repair', 'Complex Repair')}</Text>
               <AntDesign name="right" size={16} color="#4a4a4a" />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.reasonButton}
-              onPress={() => openConfirmationModal('Part Replacement')}
+              onPress={() => openConfirmationModal(t('reason_part_replacement', 'Part Replacement'))}
             >
-              <Text style={styles.reasonText}>Part Replacement</Text>
+              <Text style={styles.reasonText}>{t('reason_part_replacement', 'Part Replacement')}</Text>
               <AntDesign name="right" size={16} color="#4a4a4a" />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.reasonButton}
-              onPress={() => openConfirmationModal('More time or detailed analysis')}
+              onPress={() => openConfirmationModal(t('reason_more_time', 'More time or detailed analysis'))}
             >
-              <Text style={styles.reasonText}>More time or detailed analysis</Text>
+              <Text style={styles.reasonText}>{t('reason_more_time', 'More time or detailed analysis')}</Text>
               <AntDesign name="right" size={16} color="#4a4a4a" />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.reasonButton}
-              onPress={() => openConfirmationModal('Others')}
+              onPress={() => openConfirmationModal(t('reason_others', 'Others'))}
             >
-              <Text style={styles.reasonText}>Others</Text>
+              <Text style={styles.reasonText}>{t('reason_others', 'Others')}</Text>
               <AntDesign name="right" size={16} color="#4a4a4a" />
             </TouchableOpacity>
           </View>
@@ -621,10 +607,10 @@ const ServiceInProgressScreen = () => {
           </View>
           <View style={styles.confirmationModalContainer}>
             <Text style={styles.confirmationTitle}>
-              Are you sure you want to take this repair to your place?
+              {t('confirmation_title', 'Are you sure you want to take this repair to your place?')}
             </Text>
             <View style={styles.horizantalLine} />
-            <Text style={styles.fieldLabel}>Estimated Duration</Text>
+            <Text style={styles.fieldLabel}>{t('estimated_duration', 'Estimated Duration')}</Text>
             <Dropdown
               style={styles.dropdown}
               data={durationOptions}
@@ -633,12 +619,12 @@ const ServiceInProgressScreen = () => {
               itemTextStyle={styles.itemTextStyle}
               labelField="label"
               valueField="value"
-              placeholder="Select days"
+              placeholder={t('select_days', 'Select days')}
               value={estimatedDuration}
               onChange={item => setEstimatedDuration(item.value)}
             />
             <Text style={styles.fieldLabel}>
-              Upload the pic you are repairing in your place
+              {t('upload_pic', 'Upload the pic you are repairing in your place')}
             </Text>
             <View style={styles.uploadContainer}>
               <View style={styles.imageContainer}>
@@ -651,10 +637,10 @@ const ServiceInProgressScreen = () => {
                 )}
               </View>
               <TouchableOpacity style={styles.uploadButton} onPress={handleUploadImage}>
-                <Text style={styles.uploadButtonText}>Upload</Text>
+                <Text style={styles.uploadButtonText}>{t('upload', 'Upload')}</Text>
               </TouchableOpacity>
             </View>
-            <Text style={styles.fieldLabel}>Service location</Text>
+            <Text style={styles.fieldLabel}>{t('service_location', 'Service location')}</Text>
             <View style={styles.addressContainer}>
               <View style={styles.locationContainer}>
                 <Image
@@ -673,11 +659,11 @@ const ServiceInProgressScreen = () => {
                 size={20}
                 color={accept ? '#ff4500' : '#212121'}
               />
-              <Text style={styles.addressText}>Accept the terms & policy</Text>
+              <Text style={styles.addressText}>{t('accept_terms', 'Accept the terms & policy')}</Text>
             </TouchableOpacity>
             <View style={styles.confirmButtonContainer}>
               <TouchableOpacity style={styles.confirmButton} onPress={confirmWorkPlace}>
-                <Text style={styles.confirmButtonText}>Confirm</Text>
+                <Text style={styles.confirmButtonText}>{t('confirm', 'Confirm')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -686,6 +672,8 @@ const ServiceInProgressScreen = () => {
     </View>
   );
 };
+
+export default ServiceInProgressScreen;
 
 const dynamicStyles = isDarkMode =>
   StyleSheet.create({
@@ -798,7 +786,7 @@ const dynamicStyles = isDarkMode =>
       fontWeight: 'bold',
     },
     serviceDetailsContainer: {
-      backgroundColor: isDarkMode ? '#222222' : '#f9f9f9',
+      backgroundColor: isDarkMode ? '#333333' : '#f9f9f9',
       flex: 1,
       padding: 20,
       marginTop: 20,
@@ -898,8 +886,8 @@ const dynamicStyles = isDarkMode =>
       fontSize: 18,
       fontWeight: 'bold',
       textAlign: 'center',
-      marginBottom: 5,
-      color: isDarkMode ? '#ffffff' : '#000000',
+      marginBottom: 16,
+      color: isDarkMode ? '#fff' : '#000',
     },
     reasonButton: {
       flexDirection: 'row',
@@ -911,7 +899,7 @@ const dynamicStyles = isDarkMode =>
     },
     reasonText: {
       fontSize: 16,
-      color: isDarkMode ? '#ffffff' : '#333333',
+      color: isDarkMode ? '#fff' : '#333333',
     },
     crossContainer: {
       flexDirection: 'row',
@@ -930,7 +918,9 @@ const dynamicStyles = isDarkMode =>
       fontWeight: 'bold',
       textAlign: 'center',
       marginBottom: 10,
-      color: isDarkMode ? '#ffffff' : '#000000',
+      color: isDarkMode ? '#fff' : '#000',
+      borderBottomWidth: 1,
+      borderBottomColor: isDarkMode ? '#555555' : '#eeeeee',
     },
     horizantalLine: {
       borderBottomWidth: 1,
@@ -1029,6 +1019,7 @@ const dynamicStyles = isDarkMode =>
       backgroundColor: '#FF4500',
       borderRadius: 10,
       paddingVertical: 10,
+      paddingHorizontal: 20,
       alignItems: 'center',
       width: 120,
     },
@@ -1040,7 +1031,6 @@ const dynamicStyles = isDarkMode =>
     errorText: {
       color: '#FF4500',
     },
-    // Additional styles for timeline and swipe
     technicianContainer: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -1152,9 +1142,16 @@ const dynamicStyles = isDarkMode =>
       fontSize: 12,
       color: isDarkMode ? '#bbbbbb' : '#4a4a4a',
     },
-    swipeButton:{
-      marginHorizontal:'10%'
-    }
+    swipeButton: {
+      marginHorizontal: '10%',
+    },
+    thumbContainer: {
+      width: 50,
+      height: 50,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: 'transparent',
+    },
   });
 
-export default ServiceInProgressScreen;
+

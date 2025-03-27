@@ -1,5 +1,4 @@
 import React from 'react';
-
 import {
   View,
   Text,
@@ -13,65 +12,91 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../context/ThemeContext';
-
-const supportSections = [
-  {
-    id: 'service',
-    title: 'Service Issues',
-    description: 'Having trouble with a job request or service details?',
-  },
-  {
-    id: 'payment',
-    title: 'Payment Problems',
-    description: 'Issues with payments, invoices, or payouts?',
-  },
-  {
-    id: 'usage',
-    title: 'How to Use the App',
-    description: 'Need guidance on using the app features?',
-  },
-  {
-    id: 'account',
-    title: 'Account & Verification',
-    description: 'Problems with your profile, ID verification, or account settings?',
-  },
-  {
-    id: 'other',
-    title: 'Other Queries',
-    description: 'Any other questions or technical issues?',
-  },
-];
+// Import translator hook
+import { useTranslation } from 'react-i18next';
 
 const WorkerHelpScreen = () => {
   const { width } = useWindowDimensions();
   const { isDarkMode } = useTheme();
   const styles = dynamicStyles(width, isDarkMode);
-    const navigation = useNavigation();
+  const navigation = useNavigation();
+  const { t } = useTranslation();
 
-  // Function to handle when a section is pressed
+  // Updated supportSections array with localized strings
+  const supportSections = [
+    {
+      id: 'service',
+      title: t('service_issues', 'Service Issues'),
+      description: t(
+        'service_issues_description',
+        'Having trouble with a job request or service details?'
+      ),
+    },
+    {
+      id: 'payment',
+      title: t('payment_problems', 'Payment Problems'),
+      description: t(
+        'payment_problems_description',
+        'Issues with payments, invoices, or payouts?'
+      ),
+    },
+    {
+      id: 'usage',
+      title: t('how_to_use_app', 'How to Use the App'),
+      description: t(
+        'how_to_use_app_description',
+        'Need guidance on using the app features?'
+      ),
+    },
+    {
+      id: 'account',
+      title: t('account_verification', 'Account & Verification'),
+      description: t(
+        'account_verification_description',
+        'Problems with your profile, ID verification, or account settings?'
+      ),
+    },
+    {
+      id: 'other',
+      title: t('other_queries', 'Other Queries'),
+      description: t(
+        'other_queries_description',
+        'Any other questions or technical issues?'
+      ),
+    },
+  ];
+
+  // Handler for section press: display alert with localized strings.
   const handleSectionPress = (sectionTitle) => {
     Alert.alert(
-      'Support',
-      `You selected the "${sectionTitle}" section.\nA support agent will contact you shortly.`,
-      [{ text: 'OK' }]
+      t('support', 'Support'),
+      t(
+        'support_message',
+        'You selected the "{{sectionTitle}}" section.\nA support agent will contact you shortly.',
+        { sectionTitle }
+      ),
+      [{ text: t('ok', 'OK') }]
     );
   };
 
-  // Function to handle phone call press from floating button
+  // Handler for phone call press
   const handlePhoneCallPress = () => {
     // Update with your support phone number
-    Linking.openURL('tel:+919392365494');
+    Linking.openURL('tel:7981793632');
   };
 
-  // Function to handle help press (if you want to show a help modal, for example)
+  // Handler for help press to show help modal/alert
   const handleHelpPress = () => {
     Alert.alert(
-      'Need Help?',
-      'Please contact our support team via phone or email.',
+      t('need_help', 'Need Help?'),
+      t(
+        'contact_support',
+        'Please contact our support team via phone or email.'
+      ),
       [
-        { text: 'Call', onPress: handlePhoneCallPress },
-        { text: 'Email', onPress: () => Linking.openURL('mailto:customer.support@gmail.com') },
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('call', 'Call'), onPress: handlePhoneCallPress },
+        { text: t('email', 'Email'), onPress: () => Linking.openURL('mailto:customer.support@gmail.com') },
+        { text: t('cancel', 'Cancel'), style: 'cancel' },
       ]
     );
   };
@@ -80,20 +105,20 @@ const WorkerHelpScreen = () => {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() =>navigation.goBack() }>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color={isDarkMode ? '#fff' : '#212121'} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Help & Support</Text>
+        <Text style={styles.headerTitle}>{t('help_support', 'Help & Support')}</Text>
         <TouchableOpacity>
           <Ionicons name="chatbubble-ellipses-outline" size={24} color="#ff4500" />
-        </TouchableOpacity> 
+        </TouchableOpacity>
       </View>
 
       {/* Content */}
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <Text style={styles.mainTitle}>How can we help you?</Text>
+        <Text style={styles.mainTitle}>{t('how_can_we_help', 'How can we help you?')}</Text>
         <Text style={styles.subTitle}>
-          Select the category that best describes your issue.
+          {t('select_category', 'Select the category that best describes your issue.')}
         </Text>
 
         {supportSections.map((section) => (
@@ -116,9 +141,9 @@ const WorkerHelpScreen = () => {
         <Ionicons name="call" size={28} color="#fff" />
       </TouchableOpacity>
 
-      {/* Optional: If you want the Help text to show the help modal */}
+      {/* Help Button */}
       <TouchableOpacity style={styles.helpButton} onPress={handleHelpPress}>
-        <Text style={styles.helpButtonText}>Help</Text>
+        <Text style={styles.helpButtonText}>{t('help', 'Help')}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -203,7 +228,6 @@ function dynamicStyles(width, isDarkMode) {
       alignItems: 'center',
       elevation: 5,
     },
-    // Optional help button style (if you want a help text button at the bottom)
     helpButton: {
       position: 'absolute',
       bottom: 30,

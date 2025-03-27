@@ -21,13 +21,16 @@ import Entypo from 'react-native-vector-icons/Entypo';
 import axios from 'axios';
 import EncryptedStorage from 'react-native-encrypted-storage';
 import {useNavigation} from '@react-navigation/native';
-
-// Import or use your existing theme hook
-import {useTheme} from '../context/ThemeContext';
+import { useTheme } from '../context/ThemeContext';
+// Import translation hook
+import { useTranslation } from 'react-i18next';
 
 const ServiceRegistration = () => {
-  const { isDarkMode } = useTheme(); // Retrieve dark mode setting
+  const { isDarkMode } = useTheme(); 
   const styles = dynamicStyles(isDarkMode);
+  const navigation = useNavigation();
+  // Initialize translator
+  const { t } = useTranslation();
 
   const [formData, setFormData] = useState({
     lastName: '',
@@ -51,31 +54,27 @@ const ServiceRegistration = () => {
   const [subServices, setSubServices] = useState([]);
   const [titleColor, setTitleColor] = useState('#FF5722');
   const [errorFields, setErrorFields] = useState({});
-  const [skillCategoryItems, setSkillCategoryItems] = useState([
-    {label: 'Electrician', value: 'electrician'},
-    {label: 'Plumber', value: 'plumber'},
-    {label: 'Carpenter', value: 'carpenter'},
-  ]);
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const navigation = useNavigation();
+  const [skillCategoryItems, setSkillCategoryItems] = useState([]);
 
   const educationItems = [
-    {label: 'High School', value: 'highschool'},
-    {label: "Bachelor's", value: 'bachelor'},
-    {label: "Master's", value: 'master'},
+    { label: t('high_school', 'High School'), value: 'highschool' },
+    { label: t('bachelors', "Bachelor's"), value: 'bachelor' },
+    { label: t('masters', "Master's"), value: 'master' },
   ];
 
   const experienceItems = [
-    {label: '0-1 Year', value: '0-1'},
-    {label: '1-3 years', value: '1-3'},
-    {label: 'more than 3 years', value: '3+'},
+    { label: t('0_1_year', '0-1 Year'), value: '0-1' },
+    { label: t('1_3_years', '1-3 years'), value: '1-3' },
+    { label: t('more_than_3_years', 'more than 3 years'), value: '3+' },
   ];
 
-  // This useEffect handles the hardware back button on Android
+  const [phoneNumber, setPhoneNumber] = useState('');
+
+  // Listen for back hardware button
   useEffect(() => {
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
       navigation.goBack();
-      return true; // Return true to prevent default behavior
+      return true; 
     });
     return () => {
       backHandler.remove();
@@ -85,18 +84,11 @@ const ServiceRegistration = () => {
   const ThumbIcon = () => {
     return (
       <View style={styles.thumbContainer}>
-        <Text>
-          {swiped ? (
-            <Entypo
-              name="check"
-              size={20}
-              color="#FF5722"
-              style={styles.checkIcon}
-            />
-          ) : (
-            <FontAwesome6 name="arrow-right-long" size={18} color="#FF5722" />
-          )}
-        </Text>
+        {swiped ? (
+          <Entypo name="check" size={20} color="#FF5722" style={styles.checkIcon} />
+        ) : (
+          <FontAwesome6 name="arrow-right-long" size={18} color="#FF5722" />
+        )}
       </View>
     );
   };
@@ -109,11 +101,11 @@ const ServiceRegistration = () => {
     setFormData({ ...formData, subSkills: updatedSubSkills });
   };
 
-  // The function called when pressing the custom back arrow
   const onBankPress = () => {
-    navigation.goBack(); // Navigate back on custom back button press
+    navigation.goBack();
   };
 
+  // Helper to upload image
   const uploadImage = async (uri) => {
     const apiKey = '287b4ba48139a6a59e75b5a8266bbea2';
     const apiUrl = 'https://api.imgbb.com/1/upload';
@@ -130,19 +122,14 @@ const ServiceRegistration = () => {
       method: 'POST',
       body: imageData,
     });
-
     if (!response.ok) {
       throw new Error('Failed to upload image.');
     }
-
     const data = await response.json();
     return data.data.url;
   };
 
-  useEffect(() => {
-    fetchServices();
-  }, []);
-
+  // Collect subservices by categories
   const groupedSubServices = subServices.reduce((acc, item) => {
     if (!acc[item.category]) {
       acc[item.category] = [];
@@ -151,20 +138,18 @@ const ServiceRegistration = () => {
     return acc;
   }, {});
 
+  // Submit the form
   const handleSubmit = async () => {
     const errors = {};
     for (const key in formData) {
-      if (
-        !formData[key] ||
-        (Array.isArray(formData[key]) && formData[key].length === 0)
-      ) {
+      if (!formData[key] || (Array.isArray(formData[key]) && formData[key].length === 0)) {
         errors[key] = true;
       }
     }
 
     if (Object.keys(errors).length > 0) {
       setErrorFields(errors);
-      Alert.alert('Error', 'Please fill all the required fields.');
+      Alert.alert(t('error', 'Error'), t('fill_required_fields', 'Please fill all the required fields.'));
       return;
     }
 
@@ -175,15 +160,10 @@ const ServiceRegistration = () => {
         navigation.replace('Login');
         return;
       }
-
       const response = await axios.post(
-        `https://backend.clicksolver.com/api/registration/submit`,
+        'https://backend.clicksolver.com/api/registration/submit',
         formData,
-        {
-          headers: {
-            Authorization: `Bearer ${pcsToken}`,
-          },
-        },
+        { headers: { Authorization: `Bearer ${pcsToken}` } }
       );
       if (response.status === 200) {
         navigation.replace('PartnerSteps');
@@ -193,92 +173,95 @@ const ServiceRegistration = () => {
     }
   };
 
+  // Fetch main service categories
   const fetchServices = async () => {
     try {
       const pcsToken = await EncryptedStorage.getItem('pcs_token');
-
       if (!pcsToken) {
         console.error('No pcs_token found.');
         navigation.replace('Login');
         return;
       }
-
       const response = await axios.get(
-        `https://backend.clicksolver.com/api/service/categories`,
-        {
-          headers: {
-            Authorization: `Bearer ${pcsToken}`,
-          },
-        },
+        'https://backend.clicksolver.com/api/service/categories',
+        { headers: { Authorization: `Bearer ${pcsToken}` } }
       );
-      setPhoneNumber(response.data[0].phone_numbers[0]);
+      if (response.data[0].phone_numbers) {
+        setPhoneNumber(response.data[0].phone_numbers[0]);
+      }
       const data = response.data;
       const mappedData = data.map((item) => ({
-        label: item.service_name,
-        value: item.service_name,
+        label: t(`service_${item.service_id}`, item.service_name), // display translated name
+        value: item.service_name, // original English name to send
+        id: item.service_id,
       }));
+      
       setSkillCategoryItems(mappedData);
     } catch (error) {
       console.error('Error fetching services:', error);
     }
   };
 
+  useEffect(() => {
+    fetchServices();
+  }, []);
+
+  // Pick & upload images
   const handleImagePick = async (fieldName) => {
     const options = {
       mediaType: 'photo',
       quality: 1,
       selectionLimit: 1,
     };
-
     launchImageLibrary(options, async (response) => {
       if (response.didCancel) {
         console.log('User cancelled image picker');
       } else if (response.error) {
         console.error('ImagePicker Error: ', response.error);
-        Alert.alert('Error', 'Failed to pick image.');
+        Alert.alert(t('error', 'Error'), t('failed_to_pick_image', 'Failed to pick image.'));
       } else if (response.assets) {
         const { uri } = response.assets[0];
         try {
           const imageUrl = await uploadImage(uri);
           handleInputChange(fieldName, imageUrl);
         } catch (error) {
-          Alert.alert('Error', 'Failed to upload image.');
+          Alert.alert(t('error', 'Error'), t('failed_to_upload_image', 'Failed to upload image.'));
           console.error(error);
         }
       }
     });
   };
 
+  // On change, update form data & fetch subservices if needed
   const handleInputChange = async (field, value) => {
     setFormData({ ...formData, [field]: value });
     setErrorFields((prev) => ({ ...prev, [field]: false }));
-
     if (field === 'skillCategory') {
       try {
         const subserviceResponse = await axios.post(
-          `https://backend.clicksolver.com/api/subservice/checkboxes`,
-          {
-            selectedService: value,
-          },
+          'https://backend.clicksolver.com/api/subservice/checkboxes',
+          { selectedService: value },
         );
         const subserviceData = subserviceResponse.data;
-        const mappedData = subserviceData.map((item) => ({
+         
+        const mappedData = subserviceData.map((item) => ({ 
           id: item.service_id,
           label: item.service_tag,
+          tag: t(`singleService_${item.main_service_id}`, ),
           category: item.service_category,
+          value: t(`IndivService_${item.service_id}`, item.service_tag)
         }));
-
-        // Save them for rendering checkboxes
         setSubServices(mappedData);
       } catch (error) {
         console.error('Error fetching subservices:', error);
-        Alert.alert('Error', 'Failed to fetch service category data.');
+        Alert.alert(t('error', 'Error'), t('failed_fetch_data', 'Failed to fetch service category data.'));
       }
     }
   };
 
   return (
     <View style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
         {/* Custom Back Button */}
         <TouchableOpacity onPress={onBankPress}>
@@ -290,15 +273,19 @@ const ServiceRegistration = () => {
           />
         </TouchableOpacity>
         <Text style={styles.headerTitle} onPress={onBankPress}>
-          Registration
+          {t('registration', 'Registration')}
         </Text>
       </View>
+
       <ScrollView>
         {/* Personal Details */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Personal Details</Text>
+          <Text style={styles.sectionTitle}>
+            {t('personal_details', 'Personal Details')}
+          </Text>
 
-          <Text style={styles.label}>First Name</Text>
+          {/* First Name */}
+          <Text style={styles.label}>{t('first_name', 'First Name')}</Text>
           <View style={styles.inputContainer}>
             <TextInput
               style={[styles.input, errorFields.firstName && styles.errorInput]}
@@ -307,12 +294,13 @@ const ServiceRegistration = () => {
               placeholderTextColor={isDarkMode ? '#AAAAAA' : '#9E9E9E'}
             />
             {errorFields.firstName && (
-              <Text style={styles.errorText}>This field is required.</Text>
+              <Text style={styles.errorText}>{t('field_required', 'This field is required.')}</Text>
             )}
           </View>
 
-          <Text style={styles.label}>Last Name</Text>
-          <View>
+          {/* Last Name */}
+          <Text style={styles.label}>{t('last_name', 'Last Name')}</Text>
+          <View style={styles.inputContainer}>
             <TextInput
               style={[styles.input, errorFields.lastName && styles.errorInput]}
               value={formData.lastName}
@@ -320,11 +308,12 @@ const ServiceRegistration = () => {
               placeholderTextColor={isDarkMode ? '#AAAAAA' : '#9E9E9E'}
             />
             {errorFields.lastName && (
-              <Text style={styles.errorText}>This field is required.</Text>
+              <Text style={styles.errorText}>{t('field_required', 'This field is required.')}</Text>
             )}
           </View>
 
-          <Text style={styles.label}>Gender</Text>
+          {/* Gender */}
+          <Text style={styles.label}>{t('gender', 'Gender')}</Text>
           <View style={styles.row}>
             <View style={styles.genderRow}>
               <RadioButton
@@ -334,7 +323,7 @@ const ServiceRegistration = () => {
                 color="#FF5722"
                 uncheckedColor={isDarkMode ? '#AAAAAA' : '#000'}
               />
-              <Text style={styles.radioText}>Male</Text>
+              <Text style={styles.radioText}>{t('male', 'Male')}</Text>
             </View>
             <View style={styles.genderRow}>
               <RadioButton
@@ -344,17 +333,15 @@ const ServiceRegistration = () => {
                 color="#FF5722"
                 uncheckedColor={isDarkMode ? '#AAAAAA' : '#000'}
               />
-              <Text style={styles.radioText}>Female</Text>
+              <Text style={styles.radioText}>{t('female', 'Female')}</Text>
             </View>
           </View>
 
-          <Text style={styles.label}>Work Experience (Years)</Text>
+          {/* Work Experience */}
+          <Text style={styles.label}>{t('work_experience', 'Work Experience (Years)')}</Text>
           <View style={styles.inputContainer}>
             <Dropdown
-              style={[
-                styles.dropdown,
-                errorFields.workExperience && styles.errorInput,
-              ]}
+              style={[styles.dropdown, errorFields.workExperience && styles.errorInput]}
               containerStyle={styles.dropdownContainer}
               data={experienceItems}
               placeholderStyle={styles.placeholderStyle}
@@ -362,11 +349,9 @@ const ServiceRegistration = () => {
               selectedTextStyle={styles.selectedTextStyle}
               iconStyle={styles.iconStyle}
               valueField="value"
-              placeholder="Select your experience"
+              placeholder={t('select_experience', 'Select your experience')}
               value={formData.workExperience}
-              onChange={(item) =>
-                handleInputChange('workExperience', item.value)
-              }
+              onChange={(item) => handleInputChange('workExperience', item.value)}
               renderRightIcon={() => (
                 <FontAwesome name="chevron-down" size={14} color="#9e9e9e" />
               )}
@@ -377,11 +362,12 @@ const ServiceRegistration = () => {
               )}
             />
             {errorFields.workExperience && (
-              <Text style={styles.errorText}>This field is required.</Text>
+              <Text style={styles.errorText}>{t('field_required', 'This field is required.')}</Text>
             )}
           </View>
 
-          <Text style={styles.label}>Age</Text>
+          {/* Age */}
+          <Text style={styles.label}>{t('age', 'Age')}</Text>
           <View style={styles.inputContainer}>
             <TextInput
               style={[styles.input, errorFields.dob && styles.errorInput]}
@@ -390,17 +376,15 @@ const ServiceRegistration = () => {
               placeholderTextColor={isDarkMode ? '#AAAAAA' : '#9E9E9E'}
             />
             {errorFields.dob && (
-              <Text style={styles.errorText}>This field is required.</Text>
+              <Text style={styles.errorText}>{t('field_required', 'This field is required.')}</Text>
             )}
           </View>
 
-          <Text style={styles.label}>Education</Text>
+          {/* Education */}
+          <Text style={styles.label}>{t('education', 'Education')}</Text>
           <View style={styles.inputContainer}>
             <Dropdown
-              style={[
-                styles.dropdown,
-                errorFields.education && styles.errorInput,
-              ]}
+              style={[styles.dropdown, errorFields.education && styles.errorInput]}
               containerStyle={styles.dropdownContainer}
               data={educationItems}
               placeholderStyle={styles.placeholderStyle}
@@ -408,7 +392,7 @@ const ServiceRegistration = () => {
               selectedTextStyle={styles.selectedTextStyle}
               iconStyle={styles.iconStyle}
               valueField="value"
-              placeholder="Select Education"
+              placeholder={t('select_education', 'Select Education')}
               value={formData.education}
               onChange={(item) => handleInputChange('education', item.value)}
               renderRightIcon={() => (
@@ -421,27 +405,19 @@ const ServiceRegistration = () => {
               )}
             />
             {errorFields.education && (
-              <Text style={styles.errorText}>This field is required.</Text>
+              <Text style={styles.errorText}>{t('field_required', 'This field is required.')}</Text>
             )}
           </View>
 
-          <Text style={styles.label}>Mobile Number</Text>
+          {/* Mobile Number */}
+          <Text style={styles.label}>{t('mobile_number', 'Mobile Number')}</Text>
           <View style={styles.phoneContainer}>
             <View style={styles.countryCode}>
               <Image
-                source={{
-                  uri: 'https://cdn-icons-png.flaticon.com/512/206/206606.png',
-                }}
+                source={{ uri: 'https://cdn-icons-png.flaticon.com/512/206/206606.png' }}
                 style={styles.flagIcon}
               />
-              <Text
-                style={[
-                  styles.label,
-                  { color: isDarkMode ? '#EEE' : '#666', marginRight: 4 },
-                ]}
-              >
-                +91
-              </Text>
+              <Text style={[styles.label, { marginRight: 4 }]}>+91</Text>
             </View>
             {phoneNumber && (
               <TextInput
@@ -457,9 +433,9 @@ const ServiceRegistration = () => {
 
         {/* Address / Residential Details */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Address / Residential Details</Text>
+          <Text style={styles.sectionTitle}>{t('address_details', 'Address / Residential Details')}</Text>
 
-          <Text style={styles.label}>Door-No/Street</Text>
+          <Text style={styles.label}>{t('door_no', 'Door-No/Street')}</Text>
           <View style={styles.inputContainer}>
             <TextInput
               style={[styles.input, errorFields.doorNo && styles.errorInput]}
@@ -468,11 +444,11 @@ const ServiceRegistration = () => {
               placeholderTextColor={isDarkMode ? '#AAAAAA' : '#9E9E9E'}
             />
             {errorFields.doorNo && (
-              <Text style={styles.errorText}>This field is required.</Text>
+              <Text style={styles.errorText}>{t('field_required', 'This field is required.')}</Text>
             )}
           </View>
 
-          <Text style={styles.label}>Landmark</Text>
+          <Text style={styles.label}>{t('landmark', 'Landmark')}</Text>
           <View style={styles.inputContainer}>
             <TextInput
               style={[styles.input, errorFields.landmark && styles.errorInput]}
@@ -481,11 +457,11 @@ const ServiceRegistration = () => {
               placeholderTextColor={isDarkMode ? '#AAAAAA' : '#9E9E9E'}
             />
             {errorFields.landmark && (
-              <Text style={styles.errorText}>This field is required.</Text>
+              <Text style={styles.errorText}>{t('field_required', 'This field is required.')}</Text>
             )}
           </View>
 
-          <Text style={styles.label}>City</Text>
+          <Text style={styles.label}>{t('city', 'City')}</Text>
           <View style={styles.inputContainer}>
             <TextInput
               style={[styles.input, errorFields.city && styles.errorInput]}
@@ -494,11 +470,11 @@ const ServiceRegistration = () => {
               placeholderTextColor={isDarkMode ? '#AAAAAA' : '#9E9E9E'}
             />
             {errorFields.city && (
-              <Text style={styles.errorText}>This field is required.</Text>
+              <Text style={styles.errorText}>{t('field_required', 'This field is required.')}</Text>
             )}
           </View>
 
-          <Text style={styles.label}>Pin Code</Text>
+          <Text style={styles.label}>{t('pin_code', 'Pin Code')}</Text>
           <View style={styles.inputContainer}>
             <TextInput
               style={[styles.input, errorFields.pincode && styles.errorInput]}
@@ -507,11 +483,11 @@ const ServiceRegistration = () => {
               placeholderTextColor={isDarkMode ? '#AAAAAA' : '#9E9E9E'}
             />
             {errorFields.pincode && (
-              <Text style={styles.errorText}>This field is required.</Text>
+              <Text style={styles.errorText}>{t('field_required', 'This field is required.')}</Text>
             )}
           </View>
 
-          <Text style={styles.label}>District</Text>
+          <Text style={styles.label}>{t('district', 'District')}</Text>
           <View style={styles.inputContainer}>
             <TextInput
               style={[styles.input, errorFields.district && styles.errorInput]}
@@ -520,11 +496,11 @@ const ServiceRegistration = () => {
               placeholderTextColor={isDarkMode ? '#AAAAAA' : '#9E9E9E'}
             />
             {errorFields.district && (
-              <Text style={styles.errorText}>This field is required.</Text>
+              <Text style={styles.errorText}>{t('field_required', 'This field is required.')}</Text>
             )}
           </View>
 
-          <Text style={styles.label}>State</Text>
+          <Text style={styles.label}>{t('state', 'State')}</Text>
           <View style={styles.inputContainer}>
             <TextInput
               style={[styles.input, errorFields.state && styles.errorInput]}
@@ -533,21 +509,20 @@ const ServiceRegistration = () => {
               placeholderTextColor={isDarkMode ? '#AAAAAA' : '#9E9E9E'}
             />
             {errorFields.state && (
-              <Text style={styles.errorText}>This field is required.</Text>
+              <Text style={styles.errorText}>{t('field_required', 'This field is required.')}</Text>
             )}
           </View>
         </View>
 
         {/* Skill Details */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Skill Details</Text>
+          <Text style={styles.sectionTitle}>{t('skill_details', 'Skill Details')}</Text>
 
-          <Text style={styles.label}>Select Service Category</Text>
+          <Text style={styles.label}>
+            {t('select_service_category', 'Select Service Category')}
+          </Text>
           <Dropdown
-            style={[
-              styles.dropdown,
-              errorFields.skillCategory && styles.errorInput,
-            ]}
+            style={[styles.dropdown, errorFields.skillCategory && styles.errorInput]}
             containerStyle={styles.dropdownContainer}
             data={skillCategoryItems}
             placeholderStyle={styles.placeholderStyle}
@@ -556,7 +531,7 @@ const ServiceRegistration = () => {
             iconStyle={styles.iconStyle}
             inputSearchStyle={styles.inputSearchStyle}
             valueField="value"
-            placeholder="Select Service Category"
+            placeholder={t('select_service_category', 'Select Service Category')}
             value={formData.skillCategory}
             onChange={(item) => handleInputChange('skillCategory', item.value)}
             renderRightIcon={() => (
@@ -564,25 +539,23 @@ const ServiceRegistration = () => {
             )}
             renderItem={(item) => (
               <View style={styles.dropdownItem}>
-                <Text style={styles.dropdownItemText}>{item.label}</Text>
+                <Text style={styles.dropdownItemText}>
+                  {t(`service_${item.id}`, item.label)}
+                </Text>
               </View>
             )}
+            
           />
           {errorFields.skillCategory && (
-            <Text style={styles.errorText}>This field is required.</Text>
+            <Text style={styles.errorText}>{t('field_required', 'This field is required.')}</Text>
           )}
 
-          <View
-            style={[
-              styles.checkboxGrid,
-              formData.subSkills.length > 0 && styles.checked,
-            ]}
-          >
+          <View style={[styles.checkboxGrid, formData.subSkills.length > 0 && styles.checked]}>
             {Object.keys(groupedSubServices).map((categoryName) => (
               <View key={categoryName} style={{ marginBottom: 16 }}>
-                <Text style={styles.checkboxCategory}>{categoryName}</Text>
+                <Text style={styles.checkboxCategory}>{groupedSubServices[categoryName][0].value}</Text>
                 {groupedSubServices[categoryName].map((item) => (
-                  <View key={item.id} style={styles.checkboxContainer}>
+                  <View key={item.tag} style={styles.checkboxContainer}>
                     <Checkbox
                       status={
                         formData.subSkills.includes(item.label)
@@ -593,7 +566,7 @@ const ServiceRegistration = () => {
                       color="#FF5722"
                       uncheckedColor={isDarkMode ? '#AAAAAA' : '#000'}
                     />
-                    <Text style={styles.label}>{item.label}</Text>
+                    <Text style={styles.label}>{item.tag}</Text>
                   </View>
                 ))}
               </View>
@@ -603,15 +576,15 @@ const ServiceRegistration = () => {
 
         {/* Upload Details */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Upload Details</Text>
+          <Text style={styles.sectionTitle}>{t('upload_details', 'Upload Details')}</Text>
 
           <View style={styles.uploadContainer}>
             <View style={styles.imageUpload}>
               <View style={styles.text1}>
-                <Text style={styles.label}>Upload Profile</Text>
+                <Text style={styles.label}>{t('upload_profile', 'Upload Profile')}</Text>
               </View>
               <View style={styles.text2}>
-                <Text style={styles.label}>Upload Proof</Text>
+                <Text style={styles.label}>{t('upload_proof', 'Upload Proof')}</Text>
               </View>
             </View>
 
@@ -641,10 +614,12 @@ const ServiceRegistration = () => {
                   onPress={() => handleImagePick('profileImageUri')}
                 >
                   <Icon name="image" size={24} color="#9e9e9e" />
-                  <Text style={styles.fileText}>Choose File</Text>
+                  <Text style={styles.fileText}>{t('choose_file', 'Choose File')}</Text>
                 </TouchableOpacity>
                 {errorFields.profileImageUri && (
-                  <Text style={styles.errorText}>This field is required.</Text>
+                  <Text style={styles.errorText}>
+                    {t('field_required', 'This field is required.')}
+                  </Text>
                 )}
               </View>
               <View>
@@ -653,22 +628,23 @@ const ServiceRegistration = () => {
                   onPress={() => handleImagePick('proofImageUri')}
                 >
                   <Icon name="file-upload" size={24} color="#9e9e9e" />
-                  <Text style={styles.fileText}>Choose File</Text>
+                  <Text style={styles.fileText}>{t('choose_file', 'Choose File')}</Text>
                 </TouchableOpacity>
                 {errorFields.proofImageUri && (
-                  <Text style={styles.errorText}>This field is required.</Text>
+                  <Text style={styles.errorText}>
+                    {t('field_required', 'This field is required.')}
+                  </Text>
                 )}
               </View>
             </View>
           </View>
         </View>
 
+        {/* Swipe Button to Submit */}
         <View style={styles.swiperButton}>
           <SwipeButton
-            forceReset={(reset) => {
-              // You can store this reset in a ref if needed
-            }}
-            title="Submit to Commander"
+            forceReset={(reset) => {}}
+            title={t('submit_commander', 'Submit to Commander')}
             titleStyles={{ color: titleColor, fontSize: 16 }}
             railBackgroundColor="#FF5722"
             railBorderColor="#FF5722"
@@ -683,7 +659,7 @@ const ServiceRegistration = () => {
             thumbIconBorderColor={isDarkMode ? '#333333' : '#FFFFFF'}
             thumbIconWidth={50}
             thumbIconHeight={50}
-            onSwipeStart={() => setTitleColor('black')}
+            onSwipeStart={() => setTitleColor('#000000')}
             onSwipeSuccess={() => {
               handleSubmit();
               setTitleColor('#FFFFFF');
@@ -699,7 +675,7 @@ const ServiceRegistration = () => {
 
 export default ServiceRegistration;
 
-/** 
+/**
  * Dynamic style generator to handle dark and light modes
  */
 function dynamicStyles(isDarkMode) {
@@ -710,78 +686,12 @@ function dynamicStyles(isDarkMode) {
       paddingBottom: 0,
       backgroundColor: isDarkMode ? '#121212' : '#F5F5F5',
     },
-    placeholderStyle: {
-      color: isDarkMode ? '#AAAAAA' : '#9e9e9e',
-    },
-    inputContainer: {
-      marginBottom: 15,
-    },
-    uploadContainer: {
-      display: 'flex',
-      flexDirection: 'column',
-    },
-    imagePreview: {
-      width: 80,
-      height: 80,
-      borderRadius: 50,
+    header: {
+      marginBottom: 20,
     },
     leftIcon: {
       position: 'absolute',
       left: 10,
-    },
-    imageUpload: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      width: '100%',
-      alignItems: 'center',
-    },
-    errorInput: {
-      borderColor: '#FF4500',
-    },
-    errorText: {
-      color: '#FF4500',
-      fontSize: 12,
-    },
-    image1: {
-      margin: 10,
-      marginLeft: 20,
-    },
-    text1: {
-      marginLeft: 20,
-    },
-    text2: {
-      marginRight: 30,
-    },
-    image2: {
-      margin: 10,
-      marginRight: 30,
-    },
-    checkboxGrid: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      justifyContent: 'space-between',
-    },
-    radioText: {
-      fontSize: 16,
-      marginLeft: 2,
-      color: isDarkMode ? '#EEE' : '#212121',
-      fontWeight: 'bold',
-    },
-    checkboxContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginVertical: 12,
-    },
-    genderRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    header: {
-      marginBottom: 20,
-    },
-    iconStyle: {
-      width: 20,
-      height: 20,
     },
     headerTitle: {
       fontSize: 20,
@@ -789,14 +699,6 @@ function dynamicStyles(isDarkMode) {
       marginLeft: 10,
       textAlign: 'center',
       color: isDarkMode ? '#FFF' : '#1D2951',
-    },
-    dropdownItem: {
-      padding: 10,
-      backgroundColor: isDarkMode ? '#333333' : '#fff',
-    },
-    dropdownItemText: {
-      fontSize: 16,
-      color: isDarkMode ? '#FFF' : '#333',
     },
     section: {
       marginBottom: 20,
@@ -814,6 +716,9 @@ function dynamicStyles(isDarkMode) {
       marginBottom: 5,
       color: isDarkMode ? '#EEE' : '#666',
     },
+    inputContainer: {
+      marginBottom: 15,
+    },
     input: {
       height: 40,
       borderColor: '#E0E0E0',
@@ -822,36 +727,13 @@ function dynamicStyles(isDarkMode) {
       paddingHorizontal: 10,
       color: isDarkMode ? '#FFF' : '#212121',
     },
-    selectedTextStyle: {
-      color: isDarkMode ? '#EEE' : '#9e9e9e',
+    errorInput: {
+      borderColor: '#FF4500',
     },
-    dropdown: {
-      height: 40,
-      borderColor: '#E0E0E0',
-      borderWidth: 1,
-      borderRadius: 5,
-      paddingHorizontal: 10,
-      color: isDarkMode ? '#FFF' : '#212121',
-      backgroundColor: isDarkMode ? '#333333' : '#fff',
-    },
-    dropdownContainer: {
-      marginBottom: 20,
-      backgroundColor: isDarkMode ? '#333333' : '#fff',
-      borderRadius: 5,
-      elevation: 1,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.2,
-      shadowRadius: 2,
-    },
-    inputSearchStyle: {
-      backgroundColor: isDarkMode ? '#333333' : '#fff',
-      color: isDarkMode ? '#fff' : '#000',
-    },
-    row: {
-      flexDirection: 'row',
-      gap: 30,
-      marginBottom: 15,
+    errorText: {
+      color: '#FF4500',
+      fontSize: 12,
+      marginTop: 4,
     },
     phoneContainer: {
       flexDirection: 'row',
@@ -873,9 +755,6 @@ function dynamicStyles(isDarkMode) {
       height: 20,
       marginRight: 5,
     },
-    swiperButton: {
-      marginBottom: 10,
-    },
     inputPhone: {
       flex: 1,
       height: 40,
@@ -885,6 +764,101 @@ function dynamicStyles(isDarkMode) {
       paddingHorizontal: 10,
       color: isDarkMode ? '#FFF' : '#212121',
       backgroundColor: isDarkMode ? '#333333' : '#fff',
+    },
+    row: {
+      flexDirection: 'row',
+      gap: 30,
+      marginBottom: 15,
+    },
+    genderRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    radioText: {
+      fontSize: 16,
+      marginLeft: 2,
+      color: isDarkMode ? '#EEE' : '#212121',
+      fontWeight: 'bold',
+    },
+    dropdown: {
+      height: 40,
+      borderColor: '#E0E0E0',
+      borderWidth: 1,
+      borderRadius: 5,
+      paddingHorizontal: 10,
+      color: isDarkMode ? '#FFF' : '#212121',
+      backgroundColor: isDarkMode ? '#333333' : '#fff',
+    },
+    dropdownContainer: {
+      marginBottom: 20,
+      backgroundColor: isDarkMode ? '#333333' : '#fff',
+      borderRadius: 5,
+      elevation: 1,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.2,
+      shadowRadius: 2,
+    },
+    placeholderStyle: {
+      color: isDarkMode ? '#AAAAAA' : '#9e9e9e',
+    },
+    selectedTextStyle: {
+      color: isDarkMode ? '#EEE' : '#9e9e9e',
+    },
+    iconStyle: {
+      width: 20,
+      height: 20,
+    },
+    dropdownItem: {
+      padding: 10,
+      backgroundColor: isDarkMode ? '#333333' : '#fff',
+    },
+    dropdownItemText: {
+      fontSize: 16,
+      color: isDarkMode ? '#FFF' : '#333',
+    },
+    checkboxGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+    },
+    checkboxContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginVertical: 12,
+    },
+    checkboxCategory: {
+      fontWeight: 'bold',
+      fontSize: 16,
+      marginVertical: 8,
+      color: isDarkMode ? '#FFF' : '#000',
+    },
+    uploadContainer: {
+      flexDirection: 'column',
+    },
+    imageUpload: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      width: '100%',
+      alignItems: 'center',
+      marginVertical: 8,
+    },
+    text1: {
+      marginLeft: 20,
+    },
+    text2: {
+      marginRight: 30,
+    },
+    image1: {
+      marginLeft: 20,
+    },
+    image2: {
+      marginRight: 30,
+    },
+    imagePreview: {
+      width: 80,
+      height: 80,
+      borderRadius: 50,
     },
     uploadButton: {
       flexDirection: 'row',
@@ -911,11 +885,9 @@ function dynamicStyles(isDarkMode) {
     checkIcon: {
       alignSelf: 'center',
     },
-    checkboxCategory: {
-      fontWeight: 'bold',
-      fontSize: 16,
-      marginVertical: 8,
-      color: isDarkMode ? '#FFF' : '#000',
+    swiperButton: {
+      marginBottom: 10,
     },
   });
 }
+ 

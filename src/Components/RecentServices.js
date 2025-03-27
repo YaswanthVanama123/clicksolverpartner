@@ -17,6 +17,9 @@ import EncryptedStorage from 'react-native-encrypted-storage';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../context/ThemeContext';
+// Import translation hook
+import { useTranslation } from 'react-i18next';
+import i18next from 'i18next';
 
 /** 
  * Example item structure:
@@ -35,29 +38,49 @@ import { useTheme } from '../context/ThemeContext';
  */
 
 // Helper: format the date
-const formatDate = (created_at) => {
-  const date = new Date(created_at);
-  const monthNames = [
-    'January','February','March','April','May','June',
-    'July','August','September','October','November','December',
-  ];
-  return `${monthNames[date.getMonth()]} ${String(date.getDate()).padStart(2, '0')}, ${date.getFullYear()}`;
+// const formatDate = (created_at) => {
+//   const date = new Date(created_at);
+//   const monthNames = [
+//     'January','February','March','April','May','June',
+//     'July','August','September','October','November','December',
+//   ];
+//   return `${monthNames[date.getMonth()]} ${String(date.getDate()).padStart(2, '0')}, ${date.getFullYear()}`;
+// };.
+
+const formatDate = (dateString) => {
+  if (!dateString) return 'Pending';
+
+  const date = new Date(dateString);
+
+  return new Intl.DateTimeFormat(i18next.language, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: true,
+  }).format(date);
 };
 
 // Card component for a single service item
 const ServiceItemCard = ({ item, styles, tab }) => {
   const navigation = useNavigation();
-  const isCancelled = item.complete_status === "cancel" || item.complete_status === "usercanceled" || item.complete_status === "workercanceled";
-  let buttonLabel = 'View Details';
+  const { t } = useTranslation();
+  const isCancelled =
+    item.complete_status === "cancel" ||
+    item.complete_status === "usercanceled" ||
+    item.complete_status === "workercanceled";
+
+  let buttonLabel = t('view_details', 'View Details');
   let disabled = false;
   if (isCancelled) {
-    buttonLabel = 'Cancelled';
+    buttonLabel = t('cancelled', 'Cancelled');
     disabled = true;
   }
   const serviceName =
     item.service_booked && item.service_booked.length > 0
-      ? item.service_booked[0]?.serviceName
-      : 'Unknown Service';
+      ?   t(`singleService_${item.service_booked[0]?.main_service_id}`) || item.service_booked[0]?.serviceName  
+      : t('unknown_service', 'Unknown Service');
   const imageUrl =
     item.service_booked && item.service_booked.length > 0
       ? item.service_booked[0].imageUrl
@@ -66,7 +89,7 @@ const ServiceItemCard = ({ item, styles, tab }) => {
     <View style={styles.cardContainer}>
       <Image
         style={styles.cardImage}
-        source={ imageUrl ? { uri: imageUrl } : null }
+        source={imageUrl ? { uri: imageUrl } : null}
       />
       <View style={styles.cardInfo}>
         <Text style={styles.cardTitle} numberOfLines={1}>
@@ -74,14 +97,14 @@ const ServiceItemCard = ({ item, styles, tab }) => {
         </Text>
         <Text style={styles.cardDate}>{formatDate(item.created_at)}</Text>
         <Text style={styles.cardPrice}>
-          {isCancelled ? `₹${item.total_cost}` : `₹${item.total_cost}`}
+          {`₹${item.total_cost}`}
         </Text>
       </View>
       <TouchableOpacity
         style={[styles.cardButton, disabled && styles.cardButtonDisabled]}
         onPress={() => {
           if (!disabled) {
-            if (tab === 'Ongoing') {
+            if (tab === 'ongoing') {
               navigation.push('ServiceBookingOngoingItem', {
                 tracking_id: item.notification_id,
               });
@@ -94,7 +117,9 @@ const ServiceItemCard = ({ item, styles, tab }) => {
         }}
         disabled={disabled}
       >
-        <Text style={[styles.cardButtonText, disabled && styles.cardButtonTextDisabled]}>
+        <Text
+          style={[styles.cardButtonText, disabled && styles.cardButtonTextDisabled]}
+        >
           {buttonLabel}
         </Text>
       </TouchableOpacity>
@@ -103,28 +128,49 @@ const ServiceItemCard = ({ item, styles, tab }) => {
 };
 
 // Reusable error view for consistent retry UI
-const ErrorRetryView = ({ onRetry, styles }) => (
-  <View style={styles.errorContainer}>
-    <MaterialIcons name="error-outline" size={48} color="#FF0000" />
-    <Text style={styles.errorText}>Something went wrong. Please try again.</Text>
-    <TouchableOpacity style={styles.retryButton} onPress={onRetry}>
-      <Text style={styles.retryButtonText}>Retry</Text>
-    </TouchableOpacity>
-  </View>
-);
+const ErrorRetryView = ({ onRetry, styles }) => {
+  const { t } = useTranslation();
+  return (
+    <View style={styles.errorContainer}>
+      <MaterialIcons name="error-outline" size={48} color="#FF0000" />
+      <Text style={styles.errorText}>
+        {t('error_message', 'Something went wrong. Please try again.')}
+      </Text>
+      <TouchableOpacity style={styles.retryButton} onPress={onRetry}>
+        <Text style={styles.retryButtonText}>
+          {t('retry', 'Retry')}
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
 
 const RecentServices = () => {
   const { width, height } = useWindowDimensions();
   const { isDarkMode } = useTheme();
   const styles = dynamicStyles(width, height, isDarkMode);
-  const TABS = ['Ongoing', 'Completed', 'Cancelled'];
-  const [selectedTab, setSelectedTab] = useState('Ongoing');
+  const navigation = useNavigation();
+  const { t } = useTranslation();
+
+  // Define fixed tab keys and translated labels
+  const TAB_KEYS = {
+    ongoing: 'ongoing',
+    completed: 'completed',
+    cancelled: 'cancelled',
+  };
+
+  const tabs = [
+    { key: TAB_KEYS.ongoing, label: t('ongoing', 'Ongoing') },
+    { key: TAB_KEYS.completed, label: t('completed', 'Completed') },
+    { key: TAB_KEYS.cancelled, label: t('cancelled', 'Cancelled') },
+  ];
+
+  const [selectedTab, setSelectedTab] = useState(TAB_KEYS.ongoing);
   const [bookingsData, setBookingsData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [searchActive, setSearchActive] = useState(false);
   const [searchText, setSearchText] = useState('');
-  const navigation = useNavigation();
 
   // Fetch data based on the selected tab
   const fetchBookings = async () => {
@@ -135,13 +181,13 @@ const RecentServices = () => {
       if (!token) throw new Error('Token not found');
 
       let response;
-      if (selectedTab === 'Ongoing') {
+      if (selectedTab === TAB_KEYS.ongoing) {
         response = await axios.get(
           `https://backend.clicksolver.com/api/worker/ongoingBookings`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
       } else {
-        response = await axios.get( 
+        response = await axios.get(
           `https://backend.clicksolver.com/api/worker/bookings`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -163,41 +209,53 @@ const RecentServices = () => {
   const getFilteredData = () => {
     // Filter based on the selected tab.
     let data = [];
-    if (selectedTab === 'Completed') {
-      data = bookingsData.filter(item => item.complete_status !== "cancel" && item.complete_status !== "usercanceled" && item.complete_status !== "workercanceled");
-    } else if (selectedTab === 'Cancelled') {
-      data = bookingsData.filter(item => item.complete_status === "cancel" || item.complete_status === "usercanceled" || item.complete_status === "workercanceled");
+    if (selectedTab === TAB_KEYS.completed) {
+      data = bookingsData.filter(
+        (item) =>
+          item.complete_status !== "cancel" &&
+          item.complete_status !== "usercanceled" &&
+          item.complete_status !== "workercanceled"
+      );
+    } else if (selectedTab === TAB_KEYS.cancelled) {
+      data = bookingsData.filter(
+        (item) =>
+          item.complete_status === "cancel" ||
+          item.complete_status === "usercanceled" ||
+          item.complete_status === "workercanceled"
+      );
     } else {
       data = bookingsData;
-    } 
-    
+    }
+
     // Filter based on search
     if (searchActive && searchText.trim()) {
       const lowerSearch = searchText.toLowerCase();
-      data = data.filter(item => {
+      data = data.filter((item) => {
         if (
           item.service_booked &&
           item.service_booked.length > 0 &&
           item.service_booked[0].serviceName
         ) {
-          return item.service_booked[0].serviceName.toLowerCase().includes(lowerSearch);
+          return item.service_booked[0].serviceName
+            .toLowerCase()
+            .includes(lowerSearch);
         }
         return false;
       });
     }
-    
+
     // Sort data in descending order by creation date
     data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     return data;
   };
-  
+
   const filteredData = getFilteredData();
 
   return (
     <SafeAreaView style={styles.safeArea}>
       {/* TOP BAR */}
       <View style={styles.topBar}>
-        <Text style={styles.topBarTitle}>My Services</Text>
+        <Text style={styles.topBarTitle}>{t('my_services', 'My Services')}</Text>
         <TouchableOpacity
           onPress={() => {
             setSearchActive(!searchActive);
@@ -213,7 +271,7 @@ const RecentServices = () => {
         <View style={styles.searchContainer}>
           <TextInput
             style={styles.searchInput}
-            placeholder="Search services..."
+            placeholder={t('search_services', 'Search services...')}
             placeholderTextColor="#999"
             value={searchText}
             onChangeText={setSearchText}
@@ -221,16 +279,21 @@ const RecentServices = () => {
         </View>
       ) : (
         <View style={styles.tabContainer}>
-          {TABS.map((tab) => {
-            const active = tab === selectedTab;
+          {tabs.map((tab) => {
+            const active = tab.key === selectedTab;
             return (
               <TouchableOpacity
-                key={tab}
+                key={tab.key}
                 style={[styles.tabButton, active && styles.tabButtonActive]}
-                onPress={() => setSelectedTab(tab)}
+                onPress={() => setSelectedTab(tab.key)}
               >
-                <Text style={[styles.tabButtonText, active && styles.tabButtonTextActive]}>
-                  {tab}
+                <Text
+                  style={[
+                    styles.tabButtonText,
+                    active && styles.tabButtonTextActive,
+                  ]}
+                >
+                  {tab.label}
                 </Text>
               </TouchableOpacity>
             );
@@ -249,13 +312,19 @@ const RecentServices = () => {
         ) : filteredData.length === 0 ? (
           <View style={styles.noDataContainer}>
             <MaterialIcons name="search-off" size={48} color="#888" />
-            <Text style={styles.noDataText}>No results found</Text>
+            <Text style={styles.noDataText}>
+              {t('no_results_found', 'No results found')}
+            </Text>
           </View>
         ) : (
           <FlatList
             data={filteredData}
-            keyExtractor={(item, index) => `${item.notification_id}_${index}`}
-            renderItem={({ item }) => <ServiceItemCard item={item} styles={styles} tab={selectedTab} />}
+            keyExtractor={(item, index) =>
+              `${item.notification_id}_${index}`
+            }
+            renderItem={({ item }) => (
+              <ServiceItemCard item={item} styles={styles} tab={selectedTab} />
+            )}
             contentContainerStyle={styles.listContent}
           />
         )}

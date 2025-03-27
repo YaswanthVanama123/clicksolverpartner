@@ -15,8 +15,9 @@ import { useNavigation } from '@react-navigation/native';
 import EncryptedStorage from 'react-native-encrypted-storage';
 import axios from 'axios';
 import uuid from 'react-native-uuid';
-// Import our theme hook
 import { useTheme } from '../context/ThemeContext';
+// Import translation hook
+import { useTranslation } from 'react-i18next';
 
 /* --------------------- formatDate Helper --------------------- */
 const formatDate = (created_at) => {
@@ -28,9 +29,7 @@ const formatDate = (created_at) => {
   return `${monthNames[date.getMonth()]} ${String(date.getDate()).padStart(2,'0')}, ${date.getFullYear()}`;
 };
 
-/* --------------------- PartialStarRating Component ---------------------
-   Renders up to 5 stars with partial fill for decimals.
------------------------------------------------------------------------ */
+/* --------------------- PartialStarRating Component --------------------- */
 const PartialStarRating = ({ rating, size = 14, color = '#FF5722' }) => {
   const MAX_STARS = 5;
   const fullStars = Math.floor(rating);
@@ -114,11 +113,11 @@ const ReviewItem = memo(({ item, styles }) => {
 /* --------------------- Main Screen: RatingsScreen --------------------- */
 const RatingsScreen = () => {
   const { width } = useWindowDimensions();
-  // Get the theme flag from our context
   const { isDarkMode } = useTheme();
-  // Pass isDarkMode to dynamicStyles so colors update accordingly.
   const styles = dynamicStyles(width, isDarkMode);
-  const navigation = useNavigation()
+  const navigation = useNavigation();
+  // Get translation function
+  const { t } = useTranslation();
 
   const [reviews, setReviews] = useState([]);
   const [workerReview, setWorkerReview] = useState({});
@@ -141,12 +140,11 @@ const RatingsScreen = () => {
         'https://backend.clicksolver.com/api/worker/ratings',
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      console.log("data",response.data)
+      console.log("data", response.data);
       if (response.data.length === 0) {
         setReviews([]);
         setWorkerReview({});
       } else {
-        
         setReviews(response.data);
         setWorkerReview(response.data[0]);
         calculateRatingDistribution(response.data);
@@ -214,7 +212,9 @@ const RatingsScreen = () => {
               size={16}
               color="#FF5722"
             />
-            <Text style={styles.reviewCount}>{reviews.length} ratings</Text>
+            <Text style={styles.reviewCount}>
+              {reviews.length} {t('ratings', 'ratings')}
+            </Text>
           </View>
         </View>
       </View>
@@ -234,12 +234,21 @@ const RatingsScreen = () => {
       <View style={styles.mainContainer}>
         <View style={styles.headerContainer}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="arrow-back" size={24} color={isDarkMode ? "#ffffff" : "#000"} style={{ marginRight: 10 }} />
+            <Icon
+              name="arrow-back"
+              size={24}
+              color={isDarkMode ? "#ffffff" : "#000"}
+              style={{ marginRight: 10 }}
+            />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Rating Screen</Text>
+          <Text style={styles.headerTitle}>
+            {t('ratings_screen', 'Rating Screen')}
+          </Text>
         </View>
         <View style={styles.noDataContainer}>
-          <Text style={styles.noDataText}>No ratings and reviews</Text>
+          <Text style={styles.noDataText}>
+            {t('no_ratings_reviews', 'No ratings and reviews')}
+          </Text>
         </View>
       </View>
     );
@@ -249,9 +258,16 @@ const RatingsScreen = () => {
     <View style={styles.mainContainer}>
       <View style={styles.headerContainer}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-        <Icon name="arrow-back" size={24} color={isDarkMode ? "#ffffff" : "#000"} style={{ marginRight: 10 }} />
+          <Icon
+            name="arrow-back"
+            size={24}
+            color={isDarkMode ? "#ffffff" : "#000"}
+            style={{ marginRight: 10 }}
+          />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Rating Screen</Text>
+        <Text style={styles.headerTitle}>
+          {t('ratings_screen', 'Rating Screen')}
+        </Text>
       </View>
       <FlatList
         style={styles.container}
@@ -379,9 +395,8 @@ function dynamicStyles(width, isDarkMode) {
       borderRadius: isTablet ? 25 : 20,
       marginRight: isTablet ? 16 : 12,
     },
-    // New styles for the placeholder when there is no image
     userPlaceholder: {
-      backgroundColor: '#ccc', // adjust color as needed
+      backgroundColor: '#ccc',
       justifyContent: 'center',
       alignItems: 'center',
     },

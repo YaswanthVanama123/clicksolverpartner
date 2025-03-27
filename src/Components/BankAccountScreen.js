@@ -17,6 +17,8 @@ import EncryptedStorage from 'react-native-encrypted-storage';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../context/ThemeContext';
+// Import translation hook
+import { useTranslation } from 'react-i18next';
 
 const BankAccountScreen = () => {
   const [bank, setBank] = useState('');
@@ -28,18 +30,21 @@ const BankAccountScreen = () => {
   const navigation = useNavigation();
   const { isDarkMode } = useTheme();
   const styles = dynamicStyles(isDarkMode);
+  const { t } = useTranslation();
 
   const validateFields = () => {
     const newErrors = {};
-    if (!bank) newErrors.bank = 'Bank Name is required.';
-    if (!accountNumber) newErrors.accountNumber = 'Account Number is required.';
+    if (!bank) newErrors.bank = t('bank_required', 'Bank Name is required.');
+    if (!accountNumber)
+      newErrors.accountNumber = t('account_required', 'Account Number is required.');
     if (!confirmAccountNumber)
-      newErrors.confirmAccountNumber = 'Confirm Account Number is required.';
-    if (!ifscCode) newErrors.ifscCode = 'IFSC CODE is required.';
+      newErrors.confirmAccountNumber = t('confirm_account_required', 'Confirm Account Number is required.');
+    if (!ifscCode)
+      newErrors.ifscCode = t('ifsc_required', 'IFSC CODE is required.');
     if (!accountHolderName)
-      newErrors.accountHolderName = "Account Holder's Name is required.";
+      newErrors.accountHolderName = t('account_holder_required', "Account Holder's Name is required.");
     if (accountNumber && confirmAccountNumber && accountNumber !== confirmAccountNumber) {
-      newErrors.confirmAccountNumber = 'Account numbers do not match.';
+      newErrors.confirmAccountNumber = t('account_mismatch', 'Account numbers do not match.');
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -81,14 +86,14 @@ const BankAccountScreen = () => {
         { headers: { Authorization: `Bearer ${pcsToken}` } }
       );
       if (response.data.success) {
-        Alert.alert("Success", "Bank account verified and added successfully!");
+        Alert.alert(t('success', 'Success'), t('bank_added', 'Bank account verified and added successfully!'));
         navigation.replace("PartnerSteps");
       } else {
-        Alert.alert("Error", response.data.message || "Verification failed.");
+        Alert.alert(t('error', 'Error'), response.data.message || t('verification_failed', "Verification failed."));
       }
     } catch (error) {
       console.error("Error creating fund account:", error.response?.data || error.message);
-      Alert.alert("Error", "Failed to create fund account. Please check your details.");
+      Alert.alert(t('error', 'Error'), t('failed_create_account', 'Failed to create fund account. Please check your details.'));
     }
   };
 
@@ -113,15 +118,15 @@ const BankAccountScreen = () => {
             />
           </View>
         </View>
-        <Text style={styles.bankAccountDetailsText}>Bank account details</Text>
+        <Text style={styles.bankAccountDetailsText}>{t('bank_account_details', 'Bank account details')}</Text>
         <Text style={styles.disclaimerText}>
-          Note: We do not store your bank details. They are securely sent to Razorpay for payout processing.
+          {t('disclaimer', 'Note: We do not store your bank details. They are securely sent to Razorpay for payout processing.')}
         </Text>
         <View style={styles.form}>
           <View style={styles.inputContainer}>
             <TextInput
               style={[styles.input, errors.bank && { borderBottomColor: '#ff4500' }]}
-              placeholder="Bank Name"
+              placeholder={t('bank_name_placeholder', 'Bank Name')}
               placeholderTextColor={isDarkMode ? '#aaa' : "#9e9e9e"}
               value={bank}
               onChangeText={text => {
@@ -134,7 +139,7 @@ const BankAccountScreen = () => {
           <View style={styles.inputContainer}>
             <TextInput
               style={[styles.input, errors.accountNumber && { borderBottomColor: '#ff4500' }]}
-              placeholder="Account number"
+              placeholder={t('account_number_placeholder', 'Account number')}
               placeholderTextColor={isDarkMode ? '#aaa' : "#9e9e9e"}
               keyboardType="numeric"
               value={accountNumber}
@@ -151,14 +156,14 @@ const BankAccountScreen = () => {
           <View style={styles.inputContainer}>
             <TextInput
               style={[styles.input, errors.confirmAccountNumber && { borderBottomColor: '#ff4500' }]}
-              placeholder="Confirm Account number"
+              placeholder={t('confirm_account_placeholder', 'Confirm Account number')}
               placeholderTextColor={isDarkMode ? '#aaa' : "#9e9e9e"}
               keyboardType="numeric"
               value={confirmAccountNumber}
               onChangeText={text => {
                 setConfirmAccountNumber(text);
                 if (accountNumber && text !== accountNumber) {
-                  setErrors(prev => ({ ...prev, confirmAccountNumber: 'Account numbers do not match.' }));
+                  setErrors(prev => ({ ...prev, confirmAccountNumber: t('account_mismatch', 'Account numbers do not match.') }));
                 } else {
                   setErrors(prev => ({ ...prev, confirmAccountNumber: null }));
                 }
@@ -171,7 +176,7 @@ const BankAccountScreen = () => {
           <View style={styles.inputContainer}>
             <TextInput
               style={[styles.input, errors.ifscCode && { borderBottomColor: '#ff4500' }]}
-              placeholder="IFSC CODE"
+              placeholder={t('ifsc_placeholder', 'IFSC CODE')}
               placeholderTextColor={isDarkMode ? '#aaa' : "#9e9e9e"}
               value={ifscCode}
               onChangeText={text => {
@@ -187,7 +192,7 @@ const BankAccountScreen = () => {
           <View style={styles.lastInputContainer}>
             <TextInput
               style={[styles.input, errors.accountHolderName && { borderBottomColor: '#ff4500' }]}
-              placeholder="Account holder's name"
+              placeholder={t('account_holder_placeholder', "Account holder's name")}
               placeholderTextColor={isDarkMode ? '#aaa' : "#9e9e9e"}
               value={accountHolderName}
               onChangeText={text => {
@@ -201,14 +206,14 @@ const BankAccountScreen = () => {
             )}
           </View>
           <Text style={styles.helpText}>
-            Need help finding these numbers?{' '}
-            <Text style={styles.learnMoreText}>Learn more</Text>
+            {t('need_help_numbers', 'Need help finding these numbers?')}{' '}
+            <Text style={styles.learnMoreText}>{t('learn_more', 'Learn more')}</Text>
           </Text>
           <Text style={styles.acceptTerms}>
-            By adding this bank account, I agree to PayMe T&Cs regarding topping up from bank account.
+            {t('accept_terms', "By adding this bank account, I agree to PayMe T&Cs regarding topping up from bank account.")}
           </Text>
           <TouchableOpacity style={styles.button} onPress={handleAddBankAccount}>
-            <Text style={styles.buttonText}>Add bank account</Text>
+            <Text style={styles.buttonText}>{t('add_bank_account', 'Add bank account')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

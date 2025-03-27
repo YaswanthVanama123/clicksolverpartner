@@ -21,16 +21,15 @@ import EncryptedStorage from 'react-native-encrypted-storage';
 import axios from 'axios';
 import SwipeButton from 'rn-swipe-button';
 import Entypo from 'react-native-vector-icons/Entypo';
-// Import theme hook from your context
 import { useTheme } from '../context/ThemeContext';
+// Import translation hook
+import { useTranslation } from 'react-i18next';
 
 const PaymentScanner = ({ route }) => {
-  // Grab window dimensions for responsive styling
   const { width } = useWindowDimensions();
-  // Get the current theme flag
   const { isDarkMode } = useTheme();
-  // Generate dynamic styles with width and theme flag
   const styles = dynamicStyles(width, isDarkMode);
+  const { t } = useTranslation();
 
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [paymentDetails, setPaymentDetails] = useState({});
@@ -51,8 +50,6 @@ const PaymentScanner = ({ route }) => {
     }
   }, [route.params]);
 
-  
-
   useEffect(() => {
     const fetchPaymentDetails = async () => {
       if (decodedId) {
@@ -65,40 +62,38 @@ const PaymentScanner = ({ route }) => {
           setPaymentDetails({ name, service });
           setTotalAmount(Number(amount) || 0);
         } catch (error) {
-          console.error('Error fetching payment details:', error);
+          console.error(t('error_fetching_payment', 'Error fetching payment details:'), error);
         }
       }
     };
     fetchPaymentDetails();
-  }, [decodedId]);
+  }, [decodedId, t]);
 
-  // Handle back press
   const onBackPress = React.useCallback(() => {
     navigation.dispatch(
       CommonActions.reset({
         index: 0,
-        routes: [{ name: 'Tabs', state: { routes: [{ name: 'Home' }] } }],
+        routes: [
+          {
+            name: 'Tabs',
+            state: {
+              index: 0, 
+              routes: [{ name: 'Home' }],
+            },
+          },
+        ],
       })
     );
     return true;
   }, [navigation]);
-  
-  const handleSwipeSuccess = React.useCallback(() => {
-    handlePayment();
-    setTitleColor('#FF5722');
-    setSwiped(true);
-  }, [handlePayment]);
-  
 
   useFocusEffect(
     React.useCallback(() => {
       BackHandler.addEventListener('hardwareBackPress', onBackPress);
-      return () =>
-        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-    }, [navigation])
+      return () => BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+    }, [navigation, onBackPress])
   );
 
-  // Payment submission
   const handlePayment = async () => {
     try {
       const pcs_token = await EncryptedStorage.getItem('pcs_token');
@@ -116,8 +111,8 @@ const PaymentScanner = ({ route }) => {
         })
       );
     } catch (error) {
-      console.error('Error processing payment:', error);
-      Alert.alert('Error', 'Failed to process payment.');
+      console.error(t('error_processing_payment', 'Error processing payment:'), error);
+      Alert.alert(t('error', 'Error'), t('failed_process_payment', 'Failed to process payment.'));
     }
   };
 
@@ -133,7 +128,6 @@ const PaymentScanner = ({ route }) => {
       </Text>
     </View>
   ));
-  
 
   return (
     <View style={styles.container}>
@@ -142,7 +136,7 @@ const PaymentScanner = ({ route }) => {
         <TouchableOpacity style={styles.leftIcon} onPress={onBackPress}>
           <FontAwesome6 name="arrow-left-long" size={20} color={isDarkMode ? '#ffffff' : '#9e9e9e'} />
         </TouchableOpacity>
-        <Text style={styles.screenName}>Payment Scanner</Text>
+        <Text style={styles.screenName}>{t('payment_scanner', 'Payment Scanner')}</Text>
       </View>
 
       {/* Payment Info */}
@@ -152,18 +146,16 @@ const PaymentScanner = ({ route }) => {
           style={styles.profileImage}
         />
         <Text style={styles.name}>{paymentDetails.name}</Text>
-        <Text style={styles.amountText}>Amount</Text>
+        <Text style={styles.amountText}>{t('amount', 'Amount')}</Text>
         <Text style={styles.amount}>₹{totalAmount}</Text>
         <Text style={styles.service}>{paymentDetails.service}</Text>
 
         <View style={styles.qrContainer}>
           <Image
-            // source={{ uri: 'https://i.postimg.cc/3RDzkGDh/Image-3.png' }}
             source={{ uri: 'https://i.postimg.cc/vB0sXKjj/DALL-E-2025-03-17-18-08-17-A-fully-blurred-QR-code-making-it-completely-unreadable-with-a-strong.png' }}
-            
             style={styles.ScannerImage}
           />
-          <Text style={styles.qrText}>Scan QR code to pay</Text>
+          <Text style={styles.qrText}>{t('scan_qr_code', 'Scan QR code to pay')}</Text>
         </View>
       </View>
 
@@ -175,13 +167,13 @@ const PaymentScanner = ({ route }) => {
           onPress={() => setPaymentMethod('cash')}
           color="#FF5722"
         />
-        <Text style={styles.radioText}>Paid by Cash</Text>
+        <Text style={styles.radioText}>{t('paid_by_cash', 'Paid by Cash')}</Text>
       </View>
 
       {/* Swipe Button */}
       <View style={styles.swipeButtonContainer}>
         <SwipeButton
-          title="Collected Amount"
+          title={t('collected_amount', 'Collected Amount')}
           titleStyles={{ color: titleColor, fontSize: 16 }}
           railBackgroundColor={isDarkMode ? '#333333' : '#ffffff'}
           railBorderColor="#FF5722"
@@ -209,10 +201,8 @@ const PaymentScanner = ({ route }) => {
   );
 };
 
-/* -------------------- Dynamic Styles -------------------- */
-function dynamicStyles(width, isDarkMode) {
+const dynamicStyles = (width, isDarkMode) => {
   const isTablet = width >= 600;
-
   return StyleSheet.create({
     container: {
       flex: 1,
@@ -304,6 +294,6 @@ function dynamicStyles(width, isDarkMode) {
       marginTop: isTablet ? 30 : 20,
     },
   });
-}
+};
 
 export default PaymentScanner;

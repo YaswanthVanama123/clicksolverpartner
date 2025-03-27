@@ -11,8 +11,9 @@ import { useNavigation, CommonActions } from '@react-navigation/native';
 import axios from 'axios';
 import EncryptedStorage from 'react-native-encrypted-storage';
 import FontAwesome6 from 'react-native-vector-icons/FontAwesome6';
-// Import our theme context hook
 import { useTheme } from '../context/ThemeContext';
+// Import translation hook
+import { useTranslation } from 'react-i18next';
 
 const OTPVerification = ({ route }) => {
   const [otp, setOtp] = useState(Array(4).fill(''));
@@ -21,11 +22,11 @@ const OTPVerification = ({ route }) => {
   const navigation = useNavigation();
   const [decodedId, setDecodedId] = useState(null);
   const [error, setError] = useState('');
-  const [focusedIndex, setFocusedIndex] = useState(-1); // To track the focused input
+  const [focusedIndex, setFocusedIndex] = useState(-1);
 
-  // Get current theme (isDarkMode) from our theme context
   const { isDarkMode } = useTheme();
   const styles = dynamicStyles(isDarkMode);
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (encodedId) {
@@ -60,7 +61,7 @@ const OTPVerification = ({ route }) => {
         `https://backend.clicksolver.com/api/worker/cancelled/status`,
         {
           params: { notification_id: decodedId },
-        },
+        }
       );
 
       if (data.notificationStatus === 'usercanceled') {
@@ -68,14 +69,14 @@ const OTPVerification = ({ route }) => {
         await axios.post(
           `https://backend.clicksolver.com/api/worker/action`,
           { encodedId: '', screen: '' },
-          { headers: { Authorization: `Bearer ${pcs_token}` } },
+          { headers: { Authorization: `Bearer ${pcs_token}` } }
         );
 
         navigation.dispatch(
           CommonActions.reset({
             index: 0,
             routes: [{ name: 'Tabs', state: { routes: [{ name: 'Home' }] } }],
-          }),
+          })
         );
       }
     } catch (error) {
@@ -104,7 +105,7 @@ const OTPVerification = ({ route }) => {
       const { data, status } = await axios.post(
         `https://backend.clicksolver.com/api/pin/verification`,
         { notification_id: decodedId, otp: enteredOtp },
-        { headers: { Authorization: `Bearer ${jwtToken}` } },
+        { headers: { Authorization: `Bearer ${jwtToken}` } }
       );
 
       if (status === 200) {
@@ -114,7 +115,7 @@ const OTPVerification = ({ route }) => {
         await axios.post(
           `https://backend.clicksolver.com/api/worker/action`,
           { encodedId, screen: 'worktimescreen' },
-          { headers: { Authorization: `Bearer ${pcs_token}` } },
+          { headers: { Authorization: `Bearer ${pcs_token}` } }
         );
 
         await EncryptedStorage.removeItem('workerInAction');
@@ -124,14 +125,14 @@ const OTPVerification = ({ route }) => {
           CommonActions.reset({
             index: 0,
             routes: [{ name: 'Tabs', state: { routes: [{ name: 'Home' }] } }],
-          }),
+          })
         );
       } else {
-        setError('OTP is incorrect');
+        setError(t('otp_incorrect', 'OTP is incorrect'));
       }
     } catch (error) {
       console.error('Error verifying OTP:', error);
-      setError('OTP is incorrect');
+      setError(t('otp_incorrect', 'OTP is incorrect'));
     }
   };
 
@@ -142,13 +143,13 @@ const OTPVerification = ({ route }) => {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <FontAwesome6 name="arrow-left-long" size={20} color={isDarkMode ? '#ffffff' : '#1D2951'} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Pin Verification</Text>
+        <Text style={styles.headerTitle}>{t('pin_verification', 'Pin Verification')}</Text>
       </View>
 
       {/* Centered content */}
       <View style={styles.content}>
         <Text style={styles.sentText}>
-          Your pin is displayed on user navigation screen.
+          {t('pin_sent', 'Your pin is displayed on user navigation screen.')}
         </Text>
 
         {/* OTP inputs */}
@@ -161,11 +162,11 @@ const OTPVerification = ({ route }) => {
                 focusedIndex === index && { borderColor: '#ff4500' },
               ]}
               value={value}
-              onChangeText={text => handleChange(text, index)}
-              onKeyPress={e => handleKeyDown(e, index)}
+              onChangeText={(text) => handleChange(text, index)}
+              onKeyPress={(e) => handleKeyDown(e, index)}
               maxLength={1}
               keyboardType="numeric"
-              ref={el => (inputRefs.current[index] = el)}
+              ref={(el) => (inputRefs.current[index] = el)}
               onFocus={() => setFocusedIndex(index)}
               onBlur={() => setFocusedIndex(-1)}
             />
@@ -176,11 +177,11 @@ const OTPVerification = ({ route }) => {
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
         {/* Resend timer text */}
-        <Text style={styles.resendText}>Resend code in 53 s</Text>
+        <Text style={styles.resendText}>{t('resend_code', 'Resend code in 53 s')}</Text>
 
         {/* Verify button */}
         <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-          <Text style={styles.submitButtonText}>Verify</Text>
+          <Text style={styles.submitButtonText}>{t('verify', 'Verify')}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -263,3 +264,4 @@ const dynamicStyles = (isDarkMode) =>
       fontWeight: '600',
     },
   });
+ 
