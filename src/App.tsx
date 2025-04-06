@@ -12,9 +12,6 @@ import SplashScreen from 'react-native-splash-screen';
 import Feather from 'react-native-vector-icons/Feather';
 import Entypo from 'react-native-vector-icons/Entypo';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import Ionicons from 'react-native-vector-icons/Ionicons';
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import { request, PERMISSIONS, requestNotifications } from 'react-native-permissions';
 
 // Import your components/screens
@@ -24,7 +21,6 @@ import Profile from './Components/Profile';
 import PartnerSteps from './Components/PartnerSteps';
 import LoginScreen from './Components/LoginScreen';
 import RegistrationScreen from './Components/RegistrationScreen';
-import HelloWorld from './Screens/HelloWorld';
 import UPIIdDetailsScreen from './Components/UPIIdDetailsScreen';
 import BankAccountScreen from './Components/BankAccountScreen';
 import BalanceScreen from './Screens/BalanceScreen';
@@ -34,7 +30,6 @@ import TaskConfirmation from './Components/TaskConfirmation';
 import ServiceCompletionScreen from './Components/ServiceCompletionScreen';
 import PaymentScanner from './Components/PaymentScanner';
 import OTPVerification from './Components/OtpVerification';
-import WorkerTimer from './Components/WorkerTimer';
 import WorkerNavigationScreen from './Components/WorkerNavigationScreen';
 import WorkerAcceptance from './Components/Acceptance';
 import SignUpScreen from './Components/SignUpScreen';
@@ -42,20 +37,12 @@ import skills from './Components/Skills';
 import ServiceTrackingListScreen from './Components/ServiceTrackingListScreen';
 import ServiceTrackingItemScreen from './Components/ServiceTrackingItemScreen';
 import TrackingConfirmation from './Components/TrackingConfirmation';
-import Approval from './Components/Approval';
-import IndividualWorkerPending from './Components/IndividualWorkerPending';
 import ServiceBookingItem from './Components/ServiceBookingItem';
-import CashbackScreen1 from './Components/CashbackScreen1';
-import PendingCashbackWorkers from './Components/PendingCashbackWorkers';
-import AdministratorDashboard from './Components/AdministratorDashboard';
-import AdministratorAllTrackings from './Components/AdministratorAllTrackings';
-import ApprovalPendingItems from './Components/ApprovalPendingItems';
-import PendingBalanceWorkers from './Components/PendingBalanceWorkers';
+
+
 import ServiceInProgress from './Components/ServiceInProgress';
 import ServiceRegistration from './Components/ServiceRegistration';
-import TaskCompletionScreen from './Components/TaskConformationScreen';
 import HomeScreen from './Screens/Home';
-import HomeComponent from './Screens/HomeComponent';
 import WorkerOtpVerificationScreen from './Components/WorkerOtpVerificationScreen';
 import ProfileChange from './Components/ProfileChange';
 import PaymentConfirmationScreen from './Components/PaymentConfirmationScreen';
@@ -541,7 +528,6 @@ function AppContent() {
         <Stack.Screen name="Profile" component={Profile} options={{ title: 'Profile', headerShown: false }} />
         <Stack.Screen name="Services" component={RecentServices} options={{ title: 'RecentServices', headerShown: false }} />
         <Stack.Screen name="Help" component={WorkerHelpScreen} options={{ title: 'Help', headerShown: false }} />
-
         <Stack.Screen name="ProfileScreen" component={skills} options={{ title: 'Profile', headerShown: false }} />
         <Stack.Screen name="Earnings" component={EarningsScreen} options={{ headerShown: false }} />
         <Stack.Screen name="RatingsScreen" component={RatingsScreen} options={{ headerShown: false }} />
@@ -550,18 +536,10 @@ function AppContent() {
         <Stack.Screen name="WorkerOtpVerificationScreen" component={WorkerOtpVerificationScreen} options={{ title: 'WorkerOtpVerificationScreen', headerShown: false }} />
         <Stack.Screen name="SignupDetails" component={SignUpScreen} options={{ title: 'SignupDetails', headerShown: false }} />
         <Stack.Screen name="UpiIDScreen" component={UPIIdDetailsScreen} options={{ title: 'UpiIDScreen', headerShown: false }} />
-        <Stack.Screen name="ApprovalScreen" component={Approval} options={{ title: 'Approval', headerShown: false }} />
         <Stack.Screen name="ServiceTrackingItem" component={ServiceTrackingItemScreen} options={{ title: 'ServiceTrackingItem', headerShown: false }} />
         <Stack.Screen name="TrackingConfirmation" component={TrackingConfirmation} options={{ title: 'TrackingConfirmation', headerShown: false }} />
-        <Stack.Screen name="IndividualWorkerPending" component={IndividualWorkerPending} options={{ title: 'IndividualWorkerPending', headerShown: false }} />
         <Stack.Screen name="WorkerProfile" component={ProfileChange} options={{ title: 'WorkerProfile', headerShown: false }} />
         <Stack.Screen name="serviceBookingItem" component={ServiceBookingItem} options={{ title: 'serviceBookingItem', headerShown: false }} />
-        <Stack.Screen name="WorkerPendingCashback" component={CashbackScreen1} options={{ title: 'WorkerPendingCashback', headerShown: false }} />
-        <Stack.Screen name="AdministratorAllTrackings" component={AdministratorAllTrackings} options={{ title: 'AdministratorAllTrackings', headerShown: false }} />
-        <Stack.Screen name="AdministratorDashboard" component={AdministratorDashboard} options={{ title: 'AdministratorDashboard', headerShown: false }} />
-        <Stack.Screen name="ApprovalPendingItems" component={ApprovalPendingItems} options={{ title: 'ApprovalPendingItems', headerShown: false }} />
-        <Stack.Screen name="PendingCashbackWorkers" component={PendingCashbackWorkers} options={{ title: 'PendingCashbackWorkers', headerShown: false }} />
-        <Stack.Screen name="PendingBalanceWorkers" component={PendingBalanceWorkers} options={{ title: 'PendingBalanceWorkers', headerShown: false }} />
         <Stack.Screen name="ProfileChange" component={ProfileChange} options={{ title: 'ProfileChange', headerShown: false }} />
         <Stack.Screen name="ServiceInProgress" component={ServiceInProgress} options={{ title: 'ServiceInProgress', headerShown: false }} />
         <Stack.Screen name="ServiceBookingOngoingItem" component={ServiceBookingOngoingItem} options={{ title: 'ServiceBookingOngoingItem', headerShown: false }} />
