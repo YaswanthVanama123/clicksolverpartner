@@ -13,6 +13,7 @@ import {
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import FontAwesome6 from 'react-native-vector-icons/FontAwesome6';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+// Keep RadioButton import for the timeline feature
 import { RadioButton } from 'react-native-paper';
 import axios from 'axios';
 import {
@@ -34,7 +35,13 @@ import polyline from '@mapbox/polyline';
 import { useTranslation } from 'react-i18next';
 
 const ServiceInProgressScreen = () => {
-  // States for decoded id and service data
+  // --------------------------------------------------------------------------
+  // 1) NEW: State for your two icon-based selections
+  //    'serviceCompleted' or 'workNotPossible'
+  // --------------------------------------------------------------------------
+  const [selectedOption, setSelectedOption] = useState('serviceCompleted');
+
+  // Keep your existing states
   const [decodedId, setDecodedId] = useState(null);
   const [services, setServices] = useState([]);
   const [area, setArea] = useState('');
@@ -51,7 +58,7 @@ const ServiceInProgressScreen = () => {
   const [titleColor, setTitleColor] = useState('#FFFFFF');
   const [swiped, setSwiped] = useState(false);
 
-  // Status mappings with translation
+  // Status/timeline logic
   const statuses = ['In Progress', 'Work started', 'Work Completed'];
   const statusKeys = ['accept', 'arrived', 'workCompleted'];
   const { t } = useTranslation();
@@ -68,6 +75,7 @@ const ServiceInProgressScreen = () => {
   const { isDarkMode } = useTheme();
   const styles = dynamicStyles(isDarkMode);
 
+  // Decode the ID if present
   useEffect(() => {
     if (encodedId) {
       try {
@@ -78,7 +86,7 @@ const ServiceInProgressScreen = () => {
     }
   }, [encodedId]);
 
-  // Fetch bookings details
+  // Fetch booking/service details from your API
   useEffect(() => {
     const fetchBookings = async () => {
       try {
@@ -88,6 +96,7 @@ const ServiceInProgressScreen = () => {
         );
         const data = response.data[0];
         console.log('Fetched Data:', data);
+
         const mappedServices = data.service_booked.map(serviceBookedItem => {
           const serviceStatusItem = data.service_status.find(
             statusItem =>
@@ -109,10 +118,13 @@ const ServiceInProgressScreen = () => {
             status: {
               accept: serviceStatusItem ? serviceStatusItem.accept || null : null,
               arrived: serviceStatusItem ? serviceStatusItem.arrived || null : null,
-              workCompleted: serviceStatusItem ? serviceStatusItem.workCompleted || null : null,
+              workCompleted: serviceStatusItem
+                ? serviceStatusItem.workCompleted || null
+                : null,
             },
           };
         });
+
         setServices(mappedServices);
         setArea(data.area);
         setCreatedAt(data.created_at);
@@ -126,7 +138,7 @@ const ServiceInProgressScreen = () => {
     }
   }, [decodedId]);
 
-  // Generate timeline data for a service
+  // Generate timeline data
   const generateTimelineData = status => {
     return statusKeys.map(statusKey => ({
       key: statusKey,
@@ -138,7 +150,7 @@ const ServiceInProgressScreen = () => {
     }));
   };
 
-  // Get current status from service status object
+  // Determine the current status for a service
   const getCurrentStatus = status => {
     for (let i = statusKeys.length - 1; i >= 0; i--) {
       if (status[statusKeys[i]] && status[statusKeys[i]] !== null) {
@@ -148,7 +160,7 @@ const ServiceInProgressScreen = () => {
     return 'pending';
   };
 
-  // Handle edit press for a service
+  // Click "Edit" on a service timeline
   const handleEditPress = serviceId => {
     if (editingServiceId === serviceId) {
       setEditingServiceId(null);
@@ -157,26 +169,32 @@ const ServiceInProgressScreen = () => {
     }
   };
 
-  // Handle status change confirmation
+  // Confirm user wants to update timeline status
   const handleStatusChange = (serviceId, statusKey) => {
     const statusName = statusDisplayNames[statusKey];
     Alert.alert(
       t('confirm_status_change', 'Confirm Status Change'),
-      t('confirm_status_message', `Are you sure you want to change the status to "${statusName}"?`),
+      t(
+        'confirm_status_message',
+        `Are you sure you want to change the status to "${statusName}"?`
+      ),
       [
         { text: t('no', 'No'), onPress: () => {}, style: 'cancel' },
-        { text: t('yes', 'Yes'), onPress: () => applyStatusChange(serviceId, statusKey) },
+        {
+          text: t('yes', 'Yes'),
+          onPress: () => applyStatusChange(serviceId, statusKey),
+        },
       ]
     );
   };
 
-  // Apply status change
+  // Actually update the timeline status
   const applyStatusChange = async (serviceId, statusKey) => {
     const selectedStatusIndex = statusKeys.indexOf(statusKey);
     const currentTime = new Date().toISOString();
     const service = services.find(service => service.id === serviceId);
     const serviceName = service.name;
-    console.log(serviceName, statusKey, currentTime, decodedId);
+
     try {
       const response = await axios.post(
         `https://backend.clicksolver.com/api/worker/working/status/updated`,
@@ -206,24 +224,28 @@ const ServiceInProgressScreen = () => {
     }
   };
 
-  // Modal functions
+  // --------------------------------------------------------------------------
+  // 2) "Work not possible" logic -> open reason modal
+  // --------------------------------------------------------------------------
   const workPlaceShift = () => {
     setReasonModalVisible(true);
   };
-
   const closeReasonModal = () => {
     setReasonModalVisible(false);
   };
 
-  const openConfirmationModal = () => {
+  // Confirmation modal for reasons
+  const openConfirmationModal = (reasonText) => {
+    setSelectedReason(reasonText);
     setConfirmationModalVisible(true);
   };
-
   const closeConfirmationModal = () => {
     setConfirmationModalVisible(false);
   };
 
-  // Image upload functions
+  // --------------------------------------------------------------------------
+  // 3) Camera / Image Upload
+  // --------------------------------------------------------------------------
   const handleUploadImage = () => {
     const options = {
       mediaType: 'photo',
@@ -273,20 +295,13 @@ const ServiceInProgressScreen = () => {
     }
   };
 
+  // Accepting T&C
   const handleAcceptCheck = () => {
     setAccept(!accept);
     setErrorText('');
   };
 
-  const formatTime = isoTimestamp => {
-    const date = new Date(isoTimestamp);
-    const options = { month: 'short', day: '2-digit', year: 'numeric' };
-    const formattedDate = date.toLocaleDateString('en-US', options);
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    return `${formattedDate} ${t('at', 'at')} ${hours}:${minutes}`;
-  };
-
+  // If user confirms "take to my place"
   const confirmWorkPlace = async () => {
     if (accept) {
       const detailsObj = {
@@ -296,9 +311,11 @@ const ServiceInProgressScreen = () => {
         termsAccepted: accept,
       };
       console.log('Details:', detailsObj);
+
       setErrorText('');
       setConfirmationModalVisible(false);
       setReasonModalVisible(false);
+
       try {
         const response = await axios.post(
           `https://backend.clicksolver.com/api/add/tracking`,
@@ -322,7 +339,9 @@ const ServiceInProgressScreen = () => {
         console.error('Error posting work shift: ', error);
       }
     } else {
-      setErrorText(t('accept_terms_error', 'You need to accept the terms and conditions.'));
+      setErrorText(
+        t('accept_terms_error', 'You need to accept the terms and conditions.')
+      );
     }
   };
 
@@ -333,13 +352,20 @@ const ServiceInProgressScreen = () => {
     { label: t('four_days', '4 days'), value: '4' },
   ];
 
-  // Memoized thumb icon for swipe button
+  // --------------------------------------------------------------------------
+  // 4) SWIPE BUTTON THUMB ICON
+  // --------------------------------------------------------------------------
   const ThumbIcon = useMemo(
     () => () => (
       <View style={styles.thumbContainer}>
         <Text>
           {swiped ? (
-            <Entypo name="check" size={20} color="#ff4500" style={styles.checkIcon} />
+            <Entypo
+              name="check"
+              size={20}
+              color="#ff4500"
+              style={styles.checkIcon}
+            />
           ) : (
             <FontAwesome6 name="arrow-right-long" size={15} color="#ff4500" />
           )}
@@ -349,6 +375,7 @@ const ServiceInProgressScreen = () => {
     [swiped]
   );
 
+  // Handle hardware back press
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
@@ -366,9 +393,18 @@ const ServiceInProgressScreen = () => {
         return true;
       };
       BackHandler.addEventListener('hardwareBackPress', onBackPress);
-      return () => BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+      return () =>
+        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
     }, [navigation])
   );
+
+  // --------------------------------------------------------------------------
+  // 5) Decide the swipe button text: "Service Completed" vs. "Work in my place"
+  // --------------------------------------------------------------------------
+  const swipeTitle =
+    selectedOption === 'workNotPossible'
+      ? t('work_in_my_place', 'Work in my place')
+      : t('service_completed_swipe', 'Service Completed');
 
   return (
     <View style={styles.mainContainer}>
@@ -393,18 +429,77 @@ const ServiceInProgressScreen = () => {
             );
           }}
         />
-        <Text style={styles.headerText}>{t('service_in_progress', 'Service In Progress')}</Text>
+        <Text style={styles.headerText}>
+          {t('service_in_progress', 'Service In Progress')}
+        </Text>
       </View>
 
       <ScrollView style={styles.container}>
-        {/* Service Details */}
+
+        {/* -------------------------------------------------------------------
+            6) ICON-BASED TOGGLE for "Service Completed" vs. "Work Not Possible"
+            ------------------------------------------------------------------- */}
+        <View style={{ marginHorizontal: 20, marginTop: 20 }}>
+          <Text
+            style={{
+              color: isDarkMode ? '#fff' : '#000',
+              marginBottom: 8,
+              fontWeight: 'bold',
+            }}
+          >
+            {t('choose_option', 'Choose an option')}:
+          </Text>
+
+          {/* First Option: Service Completed */}
+          <TouchableOpacity
+            style={styles.optionRow}
+            onPress={() => setSelectedOption('serviceCompleted')}
+          >
+            <MaterialCommunityIcons
+              name={
+                selectedOption === 'serviceCompleted'
+                  ? 'checkbox-marked-circle'
+                  : 'checkbox-blank-circle-outline'
+              }
+              size={24}
+              color="#ff4500"
+            />
+            <Text style={styles.optionText}>
+              {t('radio_service_completed', 'Service completed (all good)')}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Second Option: Work Not Possible */}
+          <TouchableOpacity
+            style={styles.optionRow}
+            onPress={() => setSelectedOption('workNotPossible')}
+          >
+            <MaterialCommunityIcons
+              name={
+                selectedOption === 'workNotPossible'
+                  ? 'checkbox-marked-circle'
+                  : 'checkbox-blank-circle-outline'
+              }
+              size={24}
+              color="#ff4500"
+            />
+            <Text style={styles.optionText}>
+              {t('radio_work_not_possible', 'Work not possible here, take to my place')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Service Details Container */}
         <View style={styles.serviceDetailsContainer}>
           <View style={styles.serviceDetailsHeaderContainer}>
-            <Text style={styles.serviceDetailsTitle}>{t('service_details', 'Service Details')}</Text>
+            <Text style={styles.serviceDetailsTitle}>
+              {t('service_details', 'Service Details')}
+            </Text>
             <TouchableOpacity>
               <Icon name="keyboard-arrow-right" size={24} color="#ff4500" />
             </TouchableOpacity>
           </View>
+
           <View style={styles.iconDetailsContainer}>
             <View style={styles.detailsRow}>
               <Icon name="calendar-today" size={20} color="#ff4500" />
@@ -423,43 +518,58 @@ const ServiceInProgressScreen = () => {
               </Text>
             </View>
           </View>
+
           <View style={{ marginTop: 20 }}>
+            {/* Map through your services */}
             {services.map(service => {
               const timelineData = generateTimelineData(service.status);
               const currentStatus = getCurrentStatus(service.status);
+
               return (
                 <View style={styles.ServiceCardsContainer} key={service.id}>
                   <View style={styles.technicianContainer}>
-                    <Image source={{ uri: service.image }} style={styles.technicianImage} />
+                    <Image
+                      source={{ uri: service.image }}
+                      style={styles.technicianImage}
+                    />
                     <View style={styles.technicianDetails}>
-                      <Text style={styles.technicianName}>{ t(`singleService_${service.id}`) || service.name }</Text>
+                      <Text style={styles.technicianName}>
+                        {service.name}
+                      </Text>
                       <Text style={styles.technicianTitle}>
                         {t('quantity', 'Quantity')}: {service.quantity}
                       </Text>
                     </View>
                   </View>
+
                   <Text style={styles.statusText}>
-                    {t('service_status', 'Service Status')}: {' '}
+                    {t('service_status', 'Service Status')}:{' '}
                     <Text style={styles.highLightText}>
                       {statusDisplayNames[currentStatus] || t('pending', 'Pending')}
                     </Text>
                   </Text>
                   <Text style={styles.statusText}>
-                    {t('estimated_completion', 'Estimated Completion')}: {' '}
+                    {t('estimated_completion', 'Estimated Completion')}:{' '}
                     <Text style={styles.highLightText}>2 {t('hours', 'hours')}</Text>
                   </Text>
+
                   {/* Timeline Section */}
                   <View style={styles.sectionContainer}>
                     <View style={styles.serviceTimeLineContainer}>
-                      <Text style={styles.sectionTitle}>{t('service_timeline', 'Service Timeline')}</Text>
+                      <Text style={styles.sectionTitle}>
+                        {t('service_timeline', 'Service Timeline')}
+                      </Text>
                       {currentStatus !== 'workCompleted' && (
                         <TouchableOpacity onPress={() => handleEditPress(service.id)}>
                           <Text style={styles.editText}>
-                            {editingServiceId === service.id ? t('cancel', 'Cancel') : t('edit', 'Edit')}
+                            {editingServiceId === service.id
+                              ? t('cancel', 'Cancel')
+                              : t('edit', 'Edit')}
                           </Text>
                         </TouchableOpacity>
                       )}
                     </View>
+
                     <View style={styles.innerContainerLine}>
                       {timelineData.map((item, index) => (
                         <View key={item.key} style={styles.timelineItem}>
@@ -473,7 +583,9 @@ const ServiceInProgressScreen = () => {
                               <View
                                 style={[
                                   styles.lineSegment,
-                                  { backgroundColor: timelineData[index + 1].iconColor },
+                                  {
+                                    backgroundColor: timelineData[index + 1].iconColor,
+                                  },
                                 ]}
                               />
                             )}
@@ -485,10 +597,16 @@ const ServiceInProgressScreen = () => {
                                 {item.statusValue || t('pending', 'Pending')}
                               </Text>
                             </View>
+
+                            {/* This small RadioButton is for timeline editing only */}
                             {editingServiceId === service.id && !item.statusValue && (
                               <RadioButton
                                 value={item.key}
-                                status={editingSelectedStatus === item.key ? 'checked' : 'unchecked'}
+                                status={
+                                  editingSelectedStatus === item.key
+                                    ? 'checked'
+                                    : 'unchecked'
+                                }
                                 onPress={() => {
                                   setEditingSelectedStatus(item.key);
                                   handleStatusChange(service.id, item.key);
@@ -507,10 +625,12 @@ const ServiceInProgressScreen = () => {
           </View>
         </View>
 
-        {/* Work in my place Button */}
+        {/* -------------------------------------------------------------------
+            7) SWIPE BUTTON - text depends on selectedOption
+            ------------------------------------------------------------------- */}
         <View style={styles.swipeButton}>
           <SwipeButton
-            title={t('work_in_my_place', 'Work in my place')}
+            title={swipeTitle}
             titleStyles={{ color: titleColor, fontSize: 16, fontWeight: '500' }}
             railBackgroundColor="#FF5722"
             railBorderColor="#FF5722"
@@ -527,13 +647,24 @@ const ServiceInProgressScreen = () => {
             thumbIconStyles={{ height: 30, width: 30, borderRadius: 20 }}
             onSwipeStart={() => setTitleColor('#B0B0B0')}
             onSwipeSuccess={() => {
-              workPlaceShift();
               setTitleColor('#FFFFFF');
               setSwiped(true);
+
+              if (selectedOption === 'workNotPossible') {
+                // "Work not possible" => run your existing "take to my place" logic
+                workPlaceShift();
+              } else {
+                // "Service completed" => navigate to your TaskConfirmation (change route if needed)
+                navigation.navigate('TaskConfirmation', {
+                  // pass any needed params
+                  encodedId: encodedId,
+                });
+              } 
             }}
             onSwipeFail={() => setTitleColor('#FFFFFF')}
           />
         </View>
+
       </ScrollView>
 
       {/* Reason Selection Modal */}
@@ -544,48 +675,85 @@ const ServiceInProgressScreen = () => {
         onRequestClose={closeReasonModal}
       >
         <View style={styles.modalOverlay}>
-          <TouchableOpacity onPress={closeReasonModal} style={styles.backButtonContainer}>
-            <AntDesign name="arrowleft" size={24} color={isDarkMode ? '#ffffff' : 'black'} />
+          <TouchableOpacity
+            onPress={closeReasonModal}
+            style={styles.backButtonContainer}
+          >
+            <AntDesign
+              name="arrowleft"
+              size={24}
+              color={isDarkMode ? '#ffffff' : 'black'}
+            />
           </TouchableOpacity>
           <View style={styles.modalContainer}>
             <View style={styles.heading}>
               <Text style={styles.modalTitle}>
-                {t('cancel_reason_title', 'What is the reason for taking this repair off-site?')}
+                {t(
+                  'cancel_reason_title',
+                  'What is the reason for taking this repair off-site?'
+                )}
               </Text>
             </View>
+
             <TouchableOpacity
               style={styles.reasonButton}
-              onPress={() => openConfirmationModal(t('reason_specialized_equipment', 'Specialized Equipment Needed'))}
+              onPress={() =>
+                openConfirmationModal(
+                  t('reason_specialized_equipment', 'Specialized Equipment Needed')
+                )
+              }
             >
-              <Text style={styles.reasonText}>{t('reason_specialized_equipment', 'Specialized Equipment Needed')}</Text>
+              <Text style={styles.reasonText}>
+                {t('reason_specialized_equipment', 'Specialized Equipment Needed')}
+              </Text>
               <AntDesign name="right" size={16} color="#4a4a4a" />
             </TouchableOpacity>
+
             <TouchableOpacity
               style={styles.reasonButton}
-              onPress={() => openConfirmationModal(t('reason_complex_repair', 'Complex Repair'))}
+              onPress={() =>
+                openConfirmationModal(t('reason_complex_repair', 'Complex Repair'))
+              }
             >
-              <Text style={styles.reasonText}>{t('reason_complex_repair', 'Complex Repair')}</Text>
+              <Text style={styles.reasonText}>
+                {t('reason_complex_repair', 'Complex Repair')}
+              </Text>
               <AntDesign name="right" size={16} color="#4a4a4a" />
             </TouchableOpacity>
+
             <TouchableOpacity
               style={styles.reasonButton}
-              onPress={() => openConfirmationModal(t('reason_part_replacement', 'Part Replacement'))}
+              onPress={() =>
+                openConfirmationModal(t('reason_part_replacement', 'Part Replacement'))
+              }
             >
-              <Text style={styles.reasonText}>{t('reason_part_replacement', 'Part Replacement')}</Text>
+              <Text style={styles.reasonText}>
+                {t('reason_part_replacement', 'Part Replacement')}
+              </Text>
               <AntDesign name="right" size={16} color="#4a4a4a" />
             </TouchableOpacity>
+
             <TouchableOpacity
               style={styles.reasonButton}
-              onPress={() => openConfirmationModal(t('reason_more_time', 'More time or detailed analysis'))}
+              onPress={() =>
+                openConfirmationModal(
+                  t('reason_more_time', 'More time or detailed analysis')
+                )
+              }
             >
-              <Text style={styles.reasonText}>{t('reason_more_time', 'More time or detailed analysis')}</Text>
+              <Text style={styles.reasonText}>
+                {t('reason_more_time', 'More time or detailed analysis')}
+              </Text>
               <AntDesign name="right" size={16} color="#4a4a4a" />
             </TouchableOpacity>
+
             <TouchableOpacity
               style={styles.reasonButton}
               onPress={() => openConfirmationModal(t('reason_others', 'Others'))}
             >
-              <Text style={styles.reasonText}>{t('reason_others', 'Others')}</Text>
+              <Text style={styles.reasonText}>
+                {t('reason_others', 'Others')}
+              </Text>
               <AntDesign name="right" size={16} color="#4a4a4a" />
             </TouchableOpacity>
           </View>
@@ -601,16 +769,29 @@ const ServiceInProgressScreen = () => {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.crossContainer}>
-            <TouchableOpacity onPress={closeConfirmationModal} style={styles.backButtonContainer}>
-              <AntDesign name="close" size={24} color={isDarkMode ? '#ffffff' : 'black'} />
+            <TouchableOpacity
+              onPress={closeConfirmationModal}
+              style={styles.backButtonContainer}
+            >
+              <AntDesign
+                name="close"
+                size={24}
+                color={isDarkMode ? '#ffffff' : 'black'}
+              />
             </TouchableOpacity>
           </View>
           <View style={styles.confirmationModalContainer}>
             <Text style={styles.confirmationTitle}>
-              {t('confirmation_title', 'Are you sure you want to take this repair to your place?')}
+              {t(
+                'confirmation_title',
+                'Are you sure you want to take this repair to your place?'
+              )}
             </Text>
             <View style={styles.horizantalLine} />
-            <Text style={styles.fieldLabel}>{t('estimated_duration', 'Estimated Duration')}</Text>
+
+            <Text style={styles.fieldLabel}>
+              {t('estimated_duration', 'Estimated Duration')}
+            </Text>
             <Dropdown
               style={styles.dropdown}
               data={durationOptions}
@@ -623,6 +804,7 @@ const ServiceInProgressScreen = () => {
               value={estimatedDuration}
               onChange={item => setEstimatedDuration(item.value)}
             />
+
             <Text style={styles.fieldLabel}>
               {t('upload_pic', 'Upload the pic you are repairing in your place')}
             </Text>
@@ -640,7 +822,10 @@ const ServiceInProgressScreen = () => {
                 <Text style={styles.uploadButtonText}>{t('upload', 'Upload')}</Text>
               </TouchableOpacity>
             </View>
-            <Text style={styles.fieldLabel}>{t('service_location', 'Service location')}</Text>
+
+            <Text style={styles.fieldLabel}>
+              {t('service_location', 'Service location')}
+            </Text>
             <View style={styles.addressContainer}>
               <View style={styles.locationContainer}>
                 <Image
@@ -652,6 +837,7 @@ const ServiceInProgressScreen = () => {
                 <Text style={styles.locationText}>{area}</Text>
               </View>
             </View>
+
             <Text style={styles.errorText}>{errorText}</Text>
             <TouchableOpacity style={styles.acceptTerm} onPress={handleAcceptCheck}>
               <MaterialIcons
@@ -659,8 +845,11 @@ const ServiceInProgressScreen = () => {
                 size={20}
                 color={accept ? '#ff4500' : '#212121'}
               />
-              <Text style={styles.addressText}>{t('accept_terms', 'Accept the terms & policy')}</Text>
+              <Text style={styles.addressText}>
+                {t('accept_terms', 'Accept the terms & policy')}
+              </Text>
             </TouchableOpacity>
+
             <View style={styles.confirmButtonContainer}>
               <TouchableOpacity style={styles.confirmButton} onPress={confirmWorkPlace}>
                 <Text style={styles.confirmButtonText}>{t('confirm', 'Confirm')}</Text>
@@ -771,20 +960,6 @@ const dynamicStyles = isDarkMode =>
       fontSize: 12,
       color: isDarkMode ? '#bbbbbb' : '#4a4a4a',
     },
-    button: {
-      backgroundColor: '#ff4500',
-      paddingVertical: 12,
-      marginHorizontal: 20,
-      borderRadius: 25,
-      alignItems: 'center',
-      marginTop: 10,
-      marginBottom: 30,
-    },
-    buttonText: {
-      color: '#fff',
-      fontSize: 16,
-      fontWeight: 'bold',
-    },
     serviceDetailsContainer: {
       backgroundColor: isDarkMode ? '#333333' : '#f9f9f9',
       flex: 1,
@@ -793,6 +968,9 @@ const dynamicStyles = isDarkMode =>
       marginBottom: 20,
       marginHorizontal: 20,
       borderRadius: 10,
+    },
+    iconDetailsContainer: {
+      marginTop: 10,
     },
     detailsRow: {
       flexDirection: 'row',
@@ -843,18 +1021,16 @@ const dynamicStyles = isDarkMode =>
       color: isDarkMode ? '#ffffff' : '#212121',
       marginBottom: 5,
     },
-    workPlaceButton: {
-      backgroundColor: '#ff4500',
-      paddingVertical: 12,
-      marginHorizontal: 20,
-      borderRadius: 25,
-      alignItems: 'center',
-      marginTop: 10,
+    swipeButton: {
+      marginHorizontal: '10%',
+      marginBottom: 40,
     },
-    workPlaceButtonText: {
-      color: '#FFFFFF',
-      fontSize: 16,
-      fontWeight: 'bold',
+    thumbContainer: {
+      width: 50,
+      height: 50,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: 'transparent',
     },
     modalOverlay: {
       flex: 1,
@@ -1031,127 +1207,16 @@ const dynamicStyles = isDarkMode =>
     errorText: {
       color: '#FF4500',
     },
-    technicianContainer: {
+
+    // NEW: for the two icon-based toggles
+    optionRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      marginBottom: 10,
+      marginBottom: 15,
     },
-    technicianImage: {
-      width: 50,
-      height: 50,
-      borderRadius: 25,
-    },
-    technicianDetails: {
-      marginLeft: 15,
-      flex: 1,
-    },
-    technicianName: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      color: isDarkMode ? '#ffffff' : '#212121',
-    },
-    technicianTitle: {
-      color: isDarkMode ? '#bbbbbb' : '#4a4a4a',
+    optionText: {
+      marginLeft: 8,
       fontSize: 14,
-    },
-    statusText: {
-      fontSize: 14,
-      color: isDarkMode ? '#ffffff' : '#212121',
-      marginBottom: 5,
-    },
-    ServiceCardsContainer: {
-      flexDirection: 'column',
-      marginVertical: 10,
-      backgroundColor: isDarkMode ? '#333333' : '#f9f9f9',
-      padding: 15,
-      borderRadius: 10,
-    },
-    detailsRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 5,
-    },
-    detailText: {
-      marginLeft: 10,
-      color: isDarkMode ? '#cccccc' : '#4a4a4a',
-      fontSize: 14,
-    },
-    highLightText: {
-      fontWeight: 'bold',
-      color: isDarkMode ? '#ffffff' : '#212121',
-    },
-    serviceDetailsHeaderContainer: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginBottom: 10,
-    },
-    iconDetailsContainer: {
-      marginTop: 10,
-    },
-    sectionContainer: {
-      paddingHorizontal: 16,
-      marginTop: 10,
-    },
-    serviceTimeLineContainer: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    },
-    sectionTitle: {
-      fontSize: 16,
-      fontWeight: '700',
-      color: isDarkMode ? '#ffffff' : '#212121',
-    },
-    editText: {
-      color: '#ff5700',
-      fontSize: 15,
-      fontWeight: '500',
-    },
-    innerContainerLine: {
-      marginTop: 5,
-    },
-    timelineItem: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-    },
-    iconAndLineContainer: {
-      alignItems: 'center',
-      width: 20,
-    },
-    lineSegment: {
-      width: 2,
-      height: 35,
-      marginTop: 2,
-    },
-    timelineContent: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      flex: 1,
-      justifyContent: 'space-between',
-      marginLeft: 10,
-    },
-    timelineTextContainer: {
-      flex: 1,
-    },
-    timelineText: {
-      fontSize: 14,
-      color: isDarkMode ? '#ffffff' : '#212121',
-      fontWeight: 'bold',
-    },
-    timelineTime: {
-      fontSize: 12,
-      color: isDarkMode ? '#bbbbbb' : '#4a4a4a',
-    },
-    swipeButton: {
-      marginHorizontal: '10%',
-    },
-    thumbContainer: {
-      width: 50,
-      height: 50,
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: 'transparent',
+      color: isDarkMode ? '#fff' : '#333',
     },
   });
-
-

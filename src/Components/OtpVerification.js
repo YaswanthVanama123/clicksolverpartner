@@ -57,21 +57,22 @@ const OTPVerification = ({ route }) => {
 
   const checkCancellationStatus = async () => {
     try {
-      const { data } = await axios.get(
+      const response = await axios.get(
         `https://backend.clicksolver.com/api/worker/cancelled/status`,
         {
           params: { notification_id: decodedId },
         }
       );
-
-      if (data.notificationStatus === 'usercanceled') {
-        const pcs_token = await EncryptedStorage.getItem('pcs_token');
-        await axios.post(
-          `https://backend.clicksolver.com/api/worker/action`,
-          { encodedId: '', screen: '' },
-          { headers: { Authorization: `Bearer ${pcs_token}` } }
-        );
-
+  
+      // If the record is not present (HTTP 205), perform the cancellation action and navigate home.
+      if (response.status === 205) {
+        // const pcs_token = await EncryptedStorage.getItem('pcs_token');
+        // await axios.post(
+        //   `https://backend.clicksolver.com/api/worker/action`,
+        //   { encodedId: '', screen: '' },
+        //   { headers: { Authorization: `Bearer ${pcs_token}` } }
+        // );
+  
         navigation.dispatch(
           CommonActions.reset({
             index: 0,
@@ -79,10 +80,12 @@ const OTPVerification = ({ route }) => {
           })
         );
       }
+      // If response.status is 200 (record present), simply wait (do nothing).
     } catch (error) {
       console.error('Error checking cancellation status:', error);
     }
   };
+  
 
   useEffect(() => {
     if (decodedId) {

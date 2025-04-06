@@ -744,7 +744,11 @@
   "tab_home": "Home",
   "tab_bookings": "Bookings",
   "tab_tracking": "Tracking",
-  "tab_account": "Account"
+  "tab_account": "Account",
+  "service_completed_swipe": "Service completed, swipe to confirm",
+  "radio_service_completed": "Service completed (all good)",
+  "choose_option": "Choose an option",
+  "radio_work_not_possible": "Work not possible here, take to my place"
 
 
   }

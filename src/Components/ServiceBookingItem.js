@@ -65,7 +65,7 @@ const ServiceBookingItem = () => {
     const fetchBookings = async () => {
       try {
         const response = await axios.post(
-          'https://backend.clicksolver.com/api/service/booking/item/details',
+          'https://backend.clicksolver.com/api/service/booking/user/item/details',
           { tracking_id }
         );
         const { data } = response.data;
@@ -124,7 +124,7 @@ const ServiceBookingItem = () => {
           </View>
           <View style={styles.profileTextContainer}>
             <Text style={styles.userName}>{details.name}</Text>
-            <Text style={styles.userDesignation}>{details.service}</Text>
+            {/* <Text style={styles.userDesignation}>{details.service}</Text> */}
           </View>
         </View>
 

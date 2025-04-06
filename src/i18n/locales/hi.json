@@ -746,7 +746,11 @@
   "tab_home": "होम",
   "tab_bookings": "बुकिंग्स",
   "tab_tracking": "ट्रैकिंग",
-  "tab_account": "खाता"
+  "tab_account": "खाता",
+  "service_completed_swipe": "सेवा पूरी हुई, पुष्टि करने के लिए स्वाइप करें",
+  "radio_service_completed": "सेवा पूरी हुई (सब कुछ ठीक है)",
+  "choose_option": "एक विकल्प चुनें",
+  "radio_work_not_possible": "यहाँ काम संभव नहीं, इसे मेरे पास ले जाएँ"
  
 
 

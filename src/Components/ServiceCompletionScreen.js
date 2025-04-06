@@ -67,8 +67,6 @@ const ServiceCompletionScreen = () => {
             longitude,
             latitude,
             area,
-            city,
-            pincode,
             name,
           } = response.data;
 
@@ -89,8 +87,6 @@ const ServiceCompletionScreen = () => {
               payment_type,
               serviceBooked,
               area,
-              city,
-              pincode,
               name,
             },
             totalAmount: payment,

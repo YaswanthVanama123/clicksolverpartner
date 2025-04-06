@@ -8,6 +8,8 @@ import {
   Alert,
   BackHandler,
   useWindowDimensions,
+  SafeAreaView,
+  ScrollView,
 } from 'react-native';
 import { RadioButton } from 'react-native-paper';
 import FontAwesome6 from 'react-native-vector-icons/FontAwesome6';
@@ -130,74 +132,78 @@ const PaymentScanner = ({ route }) => {
   ));
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.leftIcon} onPress={onBackPress}>
-          <FontAwesome6 name="arrow-left-long" size={20} color={isDarkMode ? '#ffffff' : '#9e9e9e'} />
-        </TouchableOpacity>
-        <Text style={styles.screenName}>{t('payment_scanner', 'Payment Scanner')}</Text>
-      </View>
+    <SafeAreaView>
+      <ScrollView>
+        <View style={styles.container}>
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity style={styles.leftIcon} onPress={onBackPress}>
+              <FontAwesome6 name="arrow-left-long" size={20} color={isDarkMode ? '#ffffff' : '#9e9e9e'} />
+            </TouchableOpacity>
+            <Text style={styles.screenName}>{t('payment_scanner', 'Payment Scanner')}</Text>
+          </View>
 
-      {/* Payment Info */}
-      <View style={styles.profileContainer}>
-        <Image
-          source={{ uri: 'https://i.postimg.cc/L5drkdQq/Image-2-removebg-preview.png' }}
-          style={styles.profileImage}
-        />
-        <Text style={styles.name}>{paymentDetails.name}</Text>
-        <Text style={styles.amountText}>{t('amount', 'Amount')}</Text>
-        <Text style={styles.amount}>₹{totalAmount}</Text>
-        <Text style={styles.service}>{paymentDetails.service}</Text>
+          {/* Payment Info */}
+          <View style={styles.profileContainer}>
+            <Image
+              source={{ uri: 'https://i.postimg.cc/L5drkdQq/Image-2-removebg-preview.png' }}
+              style={styles.profileImage}
+            />
+            <Text style={styles.name}>{paymentDetails.name}</Text>
+            <Text style={styles.amountText}>{t('amount', 'Amount')}</Text>
+            <Text style={styles.amount}>₹{totalAmount}</Text>
+            <Text style={styles.service}>{paymentDetails.service}</Text>
 
-        <View style={styles.qrContainer}>
-          <Image
-            source={{ uri: 'https://i.postimg.cc/vB0sXKjj/DALL-E-2025-03-17-18-08-17-A-fully-blurred-QR-code-making-it-completely-unreadable-with-a-strong.png' }}
-            style={styles.ScannerImage}
-          />
-          <Text style={styles.qrText}>{t('scan_qr_code', 'Scan QR code to pay')}</Text>
+            <View style={styles.qrContainer}>
+              <Image
+                source={{ uri: 'https://i.postimg.cc/vB0sXKjj/DALL-E-2025-03-17-18-08-17-A-fully-blurred-QR-code-making-it-completely-unreadable-with-a-strong.png' }}
+                style={styles.ScannerImage}
+              />
+              <Text style={styles.qrText}>{t('scan_qr_code', 'Scan QR code to pay')}</Text>
+            </View>
+          </View>
+
+          {/* Payment Method */}
+          <View style={styles.radioContainer}>
+            <RadioButton
+              value="cash"
+              status={paymentMethod === 'cash' ? 'checked' : 'unchecked'}
+              onPress={() => setPaymentMethod('cash')}
+              color="#FF5722"
+            />
+            <Text style={styles.radioText}>{t('paid_by_cash', 'Paid by Cash')}</Text>
+          </View>
+
+          {/* Swipe Button */}
+          <View style={styles.swipeButtonContainer}>
+            <SwipeButton
+              title={t('collected_amount', 'Collected Amount')}
+              titleStyles={{ color: titleColor, fontSize: 16 }}
+              railBackgroundColor={isDarkMode ? '#333333' : '#ffffff'}
+              railBorderColor="#FF5722"
+              railStyles={{
+                borderRadius: 25,
+                height: 50,
+                backgroundColor: '#FF450000',
+                borderColor: '#FF450000',
+              }}
+              thumbIconComponent={ThumbIcon}
+              thumbIconBackgroundColor="#FF5722"
+              thumbIconBorderColor="#FFFFFF"
+              thumbIconWidth={50}
+              thumbIconHeight={50}
+              onSwipeStart={() => setTitleColor('#802300')}
+              onSwipeSuccess={() => {
+                handlePayment();
+                setTitleColor('#FF5722');
+                setSwiped(true);
+              }}
+              onSwipeFail={() => setTitleColor('#FF5722')}
+            />
+          </View>
         </View>
-      </View>
-
-      {/* Payment Method */}
-      <View style={styles.radioContainer}>
-        <RadioButton
-          value="cash"
-          status={paymentMethod === 'cash' ? 'checked' : 'unchecked'}
-          onPress={() => setPaymentMethod('cash')}
-          color="#FF5722"
-        />
-        <Text style={styles.radioText}>{t('paid_by_cash', 'Paid by Cash')}</Text>
-      </View>
-
-      {/* Swipe Button */}
-      <View style={styles.swipeButtonContainer}>
-        <SwipeButton
-          title={t('collected_amount', 'Collected Amount')}
-          titleStyles={{ color: titleColor, fontSize: 16 }}
-          railBackgroundColor={isDarkMode ? '#333333' : '#ffffff'}
-          railBorderColor="#FF5722"
-          railStyles={{
-            borderRadius: 25,
-            height: 50,
-            backgroundColor: '#FF450000',
-            borderColor: '#FF450000',
-          }}
-          thumbIconComponent={ThumbIcon}
-          thumbIconBackgroundColor="#FF5722"
-          thumbIconBorderColor="#FFFFFF"
-          thumbIconWidth={50}
-          thumbIconHeight={50}
-          onSwipeStart={() => setTitleColor('#802300')}
-          onSwipeSuccess={() => {
-            handlePayment();
-            setTitleColor('#FF5722');
-            setSwiped(true);
-          }}
-          onSwipeFail={() => setTitleColor('#FF5722')}
-        />
-      </View>
-    </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 

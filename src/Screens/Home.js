@@ -67,6 +67,7 @@ const HomeScreen = () => {
   const [notificationsArray, setNotificationsArray] = useState([]);
   const [screenName, setScreenName] = useState(null);
   const [params, setParams] = useState(null);
+  const [name,setName] = useState('')
   const [messageBoxDisplay, setMessageBoxDisplay] = useState(false);
   const [isEnabled, setIsEnabled] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -185,7 +186,7 @@ const HomeScreen = () => {
             headers: { Authorization: `Bearer ${pcs_token}` },
           }
         );
-        const { route, parameter } = response.data;
+        const { route, parameter,name } = response.data;
         const parsedParams = parameter ? JSON.parse(parameter) : null;
 
         // If no route or if route is "Paymentscreen"/"worktimescreen" => remove "workerInAction"
@@ -195,6 +196,7 @@ const HomeScreen = () => {
 
         setScreenName(route || '');
         setParams(parsedParams || {});
+        setName(name || '')
         setMessageBoxDisplay(!!route);
       } else {
         await EncryptedStorage.removeItem('workerInAction');
@@ -784,7 +786,7 @@ const HomeScreen = () => {
           <Text style={styles.greetingText}>
             {greeting} <Text style={styles.greetingIcon}>{greetingIcon}</Text>
           </Text>
-          <Text style={styles.userName}>Yash</Text>
+          <Text style={styles.userName}>{name}</Text>
         </View>
         <View style={styles.moneyContainer}>
           <TouchableOpacity onPress={balanceScreen}>

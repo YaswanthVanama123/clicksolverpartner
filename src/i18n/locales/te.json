@@ -743,7 +743,11 @@
   "tab_home": "హోమ్",
   "tab_bookings": "బుకింగ్స్",
   "tab_tracking": "ట్రాకింగ్",
-  "tab_account": "ఖాతా"
+  "tab_account": "ఖాతా",
+  "service_completed_swipe": "సేవ పూర్తయింది, నిర్ధారించడానికి స్వైప్ చేయండి",
+  "radio_service_completed": "సేవ పూర్తయింది (అన్నీ బాగున్నాయి)",
+  "choose_option": "ఒక ఎంపికను ఎంచుకోండి",
+  "radio_work_not_possible": "ఇక్కడ పని సాధ్యం కాదు, నా వద్దకు తీసుకురా"
 
 
 
