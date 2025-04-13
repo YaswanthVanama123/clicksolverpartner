@@ -526,6 +526,7 @@ const HomeScreen = () => {
             'Requestnotifications',
             JSON.stringify(notifications),
           );
+          console.log("stored")
         } catch (error) {
           console.error('Failed to store notification locally:', error);
         }
@@ -601,7 +602,7 @@ const HomeScreen = () => {
     });
 
     messaging().setBackgroundMessageHandler(async (remoteMessage) => {
-      console.log('setBackgroundMessageHandler FCM', remoteMessage);
+      console.log('setBackgroundMessageHandler FCM in home', remoteMessage);
       const notificationId = remoteMessage.data.notification_id;
       if (remoteMessage.data && remoteMessage.data.screen === 'Home') {
         navigation.dispatch(

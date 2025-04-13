@@ -108,12 +108,23 @@ const WorkerOtpVerificationScreen = () => {
             await EncryptedStorage.setItem('partnerSteps', 'completed');
             await EncryptedStorage.setItem('unique', String(workerId));
             await EncryptedStorage.setItem('verification', 'true');
-            navigation.dispatch(
-              CommonActions.reset({
-                index: 0,
-                routes: [{ name: 'Tabs', state: { routes: [{ name: 'Home' }] } }],
-              })
-            );
+            const onboardingContent = await EncryptedStorage.getItem("WorkerOnboardingScreen")
+            if(onboardingContent){
+              navigation.dispatch(
+                CommonActions.reset({
+                  index: 0,
+                  routes: [{ name: 'Tabs', state: { routes: [{ name: 'Home' }] } }],
+                })
+              );
+            }else {
+              navigation.dispatch(
+                CommonActions.reset({
+                  index: 0,
+                  routes: [{ name: 'WorkerOnboardingScreen' }],
+                })
+              );
+            }
+
           }
         } else if (status === 201) {
           const { token, workerId, stepsCompleted } = data;

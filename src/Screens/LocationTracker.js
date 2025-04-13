@@ -254,7 +254,7 @@ const LocationTracker = ({ isEnabled, onLocationUpdate }) => {
     if (!isConfigured.current) {
       BackgroundGeolocation.ready({
         desiredAccuracy: BackgroundGeolocation.DESIRED_ACCURACY_HIGH,
-        distanceFilter: 50,
+        distanceFilter: 5,
         stopOnTerminate: false,
         startOnBoot: true,
         foregroundService: true,
@@ -296,7 +296,7 @@ const LocationTracker = ({ isEnabled, onLocationUpdate }) => {
       const { latitude, longitude, odometer } = location.coords;
       if (polygonEntryOdometer.current !== null && odometer !== undefined) {
         const displacement = odometer - polygonEntryOdometer.current;
-        if (displacement >= 400) {
+        if (displacement >= 30) {
           console.log('[onLocation] Moved ≥400m, updating location');
           await handleLocationUpdate(latitude, longitude);
           polygonEntryOdometer.current = odometer;

@@ -9,7 +9,9 @@ import {
   Alert,
   Modal,
   BackHandler,
+  Platform
 } from 'react-native';
+import { request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import FontAwesome6 from 'react-native-vector-icons/FontAwesome6';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -246,7 +248,16 @@ const ServiceInProgressScreen = () => {
   // --------------------------------------------------------------------------
   // 3) Camera / Image Upload
   // --------------------------------------------------------------------------
-  const handleUploadImage = () => {
+  const handleUploadImage =async () => {
+
+    if (Platform.OS === 'android' && Platform.Version >= 33) {
+      const permission = await request(PERMISSIONS.ANDROID.READ_MEDIA_IMAGES);
+      if (permission !== RESULTS.GRANTED) {
+        Alert.alert("Permission required", "We need access to your media to upload a photo.");
+        return;
+      }
+    }
+
     const options = {
       mediaType: 'photo',
       saveToPhotos: true,

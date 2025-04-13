@@ -59,6 +59,7 @@ import WorkerHelpScreen from './Components/HelpScreen';
 import notificationEventEmitter from './utils/NotificationEmitter'; // Adjust the path based on your structure
 // NEW: Import CodePush from react-native-code-push
 import CodePush from 'react-native-code-push';
+import WorkerOnboardingScreen from './Components/WorkerOnboardingScreen';
 
 
 // Define your deployment key and options for CodePush.
@@ -450,7 +451,7 @@ function AppContent() {
     };
 
     const setupHandlers = async () => {
-      await requestPermissions();
+      // await requestPermissions();
       handleForegroundNotification();
       handleBackgroundNotification();
       handleInitialNotification();
@@ -472,8 +473,15 @@ function AppContent() {
           if (partnerStepsToken === 'completed') {
             console.log("complete")
             if (verification === 'true') {
-              setInitialRoute('Tabs');
-              navigationRef.current?.navigate('Tabs');
+              const workerOnboarding = await EncryptedStorage.getItem('worker_onboarded');
+              console.log("worker complete",workerOnboarding)
+              if(workerOnboarding){
+                setInitialRoute('Tabs');
+                navigationRef.current?.navigate('Tabs');
+              }else{
+                setInitialRoute('WorkerOnboardingScreen');
+                navigationRef.current?.navigate('WorkerOnboardingScreen');
+              }
             } else {
               console.log("navigate to approval")
               setInitialRoute('ApprovalScreen');
@@ -545,7 +553,8 @@ function AppContent() {
         <Stack.Screen name="ServiceBookingOngoingItem" component={ServiceBookingOngoingItem} options={{ title: 'ServiceBookingOngoingItem', headerShown: false }} />
         <Stack.Screen name="ChatScreen" component={ChatScreen} options={{ title: 'ServiceBookingOngoingItem', headerShown: false }} />
         <Stack.Screen name="LanguageSelector" component={LanguageSelector} options={{ title: 'LanguageSelector', headerShown: false }} />
-
+        <Stack.Screen name="WorkerOnboardingScreen" component={WorkerOnboardingScreen} options={{ title: 'WorkerOnboardingScreen', headerShown: false }} />
+        
 
         
       </Stack.Navigator>

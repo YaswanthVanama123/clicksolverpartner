@@ -54,6 +54,7 @@
     "react-native-splash-screen": "^3.3.0",
     "react-native-svg": "^13.9.0",
     "react-native-swipe-gestures": "^1.0.5",
+    "react-native-swiper": "^1.6.0",
     "react-native-uuid": "^2.0.2",
     "react-native-vector-icons": "^10.1.0",
     "rn-swipe-button": "^2.0.0",
