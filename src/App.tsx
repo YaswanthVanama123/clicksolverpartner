@@ -167,6 +167,9 @@ function AppContent() {
   // Handler for force logout
   const handleForceLogout = async () => {
     try {
+      const workerOnboarding = await EncryptedStorage.getItem('worker_onboarded');
+      if(workerOnboarding){
+      
       console.log("Logging out due to session expiration...");
       const fcm_token = await EncryptedStorage.getItem('fcm_token');
       console.log("fcm token", fcm_token);
@@ -182,11 +185,15 @@ function AppContent() {
       await EncryptedStorage.removeItem("workerSessionToken");
 
       navigationRef.current?.dispatch(
-        CommonActions.reset({
+        CommonActions.reset({ 
           index: 0,
           routes: [{ name: "Login" }],
         })
-      );
+      );}
+      else{
+
+        navigationRef.current?.navigate('WorkerOnboardingScreen');
+      }
     } catch (error) {
       console.error("Error handling force logout:", error);
     }
@@ -197,7 +204,30 @@ function AppContent() {
     try {
       // First, check for PCS token.
       const pcs_token = await EncryptedStorage.getItem('pcs_token');
+      const workerOnboarding = await EncryptedStorage.getItem('worker_onboarded');
+
       if (!pcs_token) {
+        if(workerOnboarding){
+          console.error('No PCS token found. Navigating to Login.');
+          await EncryptedStorage.removeItem("pcs_token");
+          await EncryptedStorage.removeItem("fcm_token");
+          await EncryptedStorage.removeItem("unique");
+          await EncryptedStorage.removeItem("firebaseDocId");
+          await EncryptedStorage.removeItem("nullCoordinates");
+          await EncryptedStorage.removeItem("previousEnabled");
+          await EncryptedStorage.removeItem("workerSessionToken");
+          navigationRef.current?.dispatch(
+            CommonActions.reset({
+              index: 0, 
+              routes: [{ name: "Login" }],
+            })
+          );
+          // Navigate to Login if PCS token is missing.
+     
+          // navigation.replace('Login');
+          return;
+        }
+        else{
         console.error('No PCS token found. Navigating to Login.');
         await EncryptedStorage.removeItem("pcs_token");
         await EncryptedStorage.removeItem("fcm_token");
@@ -206,16 +236,13 @@ function AppContent() {
         await EncryptedStorage.removeItem("nullCoordinates");
         await EncryptedStorage.removeItem("previousEnabled");
         await EncryptedStorage.removeItem("workerSessionToken");
-        navigationRef.current?.dispatch(
-          CommonActions.reset({
-            index: 0,
-            routes: [{ name: "Login" }],
-          })
-        );
+
+        navigationRef.current?.navigate('WorkerOnboardingScreen');
         // Navigate to Login if PCS token is missing.
    
         // navigation.replace('Login');
         return;
+      }
       }
   
       // Next, check if FCM token already exists.
@@ -493,8 +520,15 @@ function AppContent() {
             navigationRef.current?.navigate('PartnerSteps');
           }
         } else {
-          setInitialRoute('Login');
-          navigationRef.current?.navigate('Login');
+          const workerOnboarding = await EncryptedStorage.getItem('worker_onboarded');
+          if(workerOnboarding){
+            setInitialRoute('Login');
+            navigationRef.current?.navigate('Login');
+          }else{
+            setInitialRoute('WorkerOnboardingScreen');
+            navigationRef.current?.navigate('WorkerOnboardingScreen');
+          }  
+ 
         }
       } catch (error) {
         console.error('Error retrieving tokens:', error);
@@ -513,12 +547,15 @@ function AppContent() {
         <ActivityIndicator size="large" color="#0000ff" />
       </View>
     );
+  }else{
+    console.log("initialRoute",initialRoute)
   }
 
   const appBackground = isDarkMode ? '#000' : '#fff';
 
   return (
     <NavigationContainer ref={navigationRef}>
+
       <Stack.Navigator initialRouteName={initialRoute}>
         <Stack.Screen name="Tabs" component={TabNavigator} options={{ headerShown: false }} />
         <Stack.Screen name="PartnerSteps" component={PartnerSteps} options={{ title: 'PartnerSteps', headerShown: false }} />

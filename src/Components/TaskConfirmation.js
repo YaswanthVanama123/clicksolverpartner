@@ -67,6 +67,7 @@ const TaskConfirmation = () => {
             `https://backend.clicksolver.com/api/worker/details`,
             { notification_id: decodedId }
           );
+          console.log("decod",decodedId)
           console.log(response.data);
           const { workDetails } = response.data;
           setDetails({

@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import EncryptedStorage from 'react-native-encrypted-storage';
 import { useNavigation, CommonActions } from '@react-navigation/native';
 import {
-  requestNotifications,
+  requestNotifications, 
   checkNotifications,
 } from 'react-native-permissions';
 import { request, PERMISSIONS } from 'react-native-permissions';
@@ -146,12 +146,23 @@ const WorkerOnboardingScreen = () => {
   const finishOnboarding = async () => {
     try {
       await EncryptedStorage.setItem('worker_onboarded', 'true');
+      const pcs_token = await EncryptedStorage.getItem("pcs_token");
+      if(pcs_token){
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: 'Tabs', state: { routes: [{ name: 'Home' }] } }],
+          })
+        )
+      }else{
               navigation.dispatch(
                 CommonActions.reset({
                   index: 0,
-                  routes: [{ name: 'Tabs', state: { routes: [{ name: 'Home' }] } }],
+                  routes: [{ name: 'Login' }],
                 })
-              )
+              );
+      }
+
     } catch (error) {
       console.error(error);
     }

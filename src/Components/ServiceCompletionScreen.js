@@ -34,11 +34,18 @@ const ServiceCompletionScreen = () => {
   const { width } = Dimensions.get('window');
   const { isDarkMode } = useTheme();
   const styles = dynamicStyles(width, isDarkMode);
+  const [decodedId,setDecodedId] = useState(null)
   const { t } = useTranslation();
 
   const {
     params: { encodedId },
   } = useRoute();
+    useEffect(() => {
+      if (encodedId) {
+        const decoded = atob(encodedId);
+        setDecodedId(decoded);
+      }
+    }, [encodedId]);
   const navigation = useNavigation();
   const [serviceArray, setServiceArray] = useState([]);
   const [locationDetails, setLocationDetails] = useState({
@@ -47,12 +54,12 @@ const ServiceCompletionScreen = () => {
     center: [0, 0],
   });
 
-  // Decode ID from route params
-  const decodedId = encodedId ? atob(encodedId) : null;
+
 
   // Fetch payment details on mount or when decodedId changes
   useEffect(() => {
     if (decodedId) {
+      console.log("dec",decodedId)
       const fetchPaymentDetails = async () => {
         try {
           const response = await axios.post(
@@ -60,9 +67,9 @@ const ServiceCompletionScreen = () => {
             { notification_id: decodedId }
           );
 
-          const {
+          const { 
             payment,
-            payment_type,
+            payment_type, 
             service,
             longitude,
             latitude,

@@ -37,21 +37,21 @@ const WorkerLoginScreen = () => {
   const navigation = useNavigation();
 
   // Override hardware back to go to Home screen
-  useFocusEffect(
-    useCallback(() => {
-      const onBackPress = () => {
-        navigation.dispatch(
-          CommonActions.reset({
-            index: 0,
-            routes: [{ name: 'Tabs', state: { routes: [{ name: 'Home' }] } }],
-          })
-        );
-        return true;
-      };
-      BackHandler.addEventListener('hardwareBackPress', onBackPress);
-      return () => BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-    }, [navigation])
-  );
+  // useFocusEffect(
+  //   useCallback(() => {
+  //     const onBackPress = () => {
+  //       navigation.dispatch(
+  //         CommonActions.reset({
+  //           index: 0,
+  //           routes: [{ name: 'Tabs', state: { routes: [{ name: 'Home' }] } }],
+  //         })
+  //       );
+  //       return true;
+  //     };
+  //     BackHandler.addEventListener('hardwareBackPress', onBackPress);
+  //     return () => BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+  //   }, [navigation])
+  // );
 
   // Auto-hide error message after 5 seconds
   useEffect(() => {

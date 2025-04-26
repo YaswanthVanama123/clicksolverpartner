@@ -103,7 +103,7 @@ const PaymentScanner = ({ route }) => {
       await axios.post('https://backend.clicksolver.com/api/user/payed', {
         totalAmount: numberAmount,
         paymentMethod,
-        decodedId,
+        decodedId, 
       });
 
       navigation.dispatch(
