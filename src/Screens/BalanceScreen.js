@@ -257,6 +257,17 @@ const BalanceScreen = () => {
             ₹{balance ?? 0}
           </Text>
         </View>
+        
+        {/* Info banner about first 15 services */}
+       <View style={styles.infoBanner}>
+         <Text style={styles.infoText}>
+           {t(
+             'first_15_free',
+             'First 15 services are free (no deduction). After 15 services, a 5% charge applies, and that amount will be reimbursed to you the next day.'
+           )}
+         </Text>
+       </View>
+
         <View style={styles.cardContainer}>
           <TouchableOpacity
             style={[styles.card, activeCard === 'ServiceHistory' && styles.activeCard]}
@@ -526,6 +537,19 @@ const dynamicStyles = (width, isDarkMode) => {
       fontSize: isTablet ? 13 : 12,
       color: isDarkMode ? '#cccccc' : '#999',
       maxWidth: 120,
+    },
+    infoBanner: {
+      backgroundColor: isDarkMode ? '#333320' : '#FFF3E0',
+      padding: isTablet ? 16 : 12,
+      marginHorizontal: isTablet ? 30 : 20,
+      borderRadius: 8,
+      marginBottom: isTablet ? 20 : 12,
+    },
+    infoText: {
+      color: isDarkMode ? '#FFD740' : '#E65100',
+      fontSize: isTablet ? 16 : 14,
+      fontWeight: '500',
+      textAlign: 'center',
     },
   });
 };

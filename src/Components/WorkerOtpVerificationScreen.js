@@ -85,10 +85,10 @@ const WorkerOtpVerificationScreen = () => {
     try {
       // Validate OTP
       const validateResponse = await axios.get(
-        'https://backend.clicksolver.com/api/worker/validateOtp',
+        'https://backend.clicksolver.com/api/partner/validateOtp',
         {
           params: {
-            mobileNumber: phoneNumber,
+            mobileNumber: phoneNumber, 
             verificationId,
             otpCode,
           },

@@ -140,7 +140,6 @@ const ChatScreen = ({ navigation, route }) => {
         <Text style={styles.headerTitle}>{profileName}</Text>
       </View>
 
-      {/* Chat Content with ScrollView */}
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -177,7 +176,7 @@ const ChatScreen = ({ navigation, route }) => {
             style={styles.input}
             value={message}
             onChangeText={setMessage}
-            placeholder="Type a message..."
+            placeholder="Type a message ....."
             placeholderTextColor="#888"
           />
           <TouchableOpacity onPress={sendMessage} style={styles.sendButton}>

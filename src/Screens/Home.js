@@ -74,6 +74,8 @@ const HomeScreen = () => {
   const [greeting, setGreeting] = useState('');
   const [greetingIcon, setGreetingIcon] = useState(null);
   const [showUpArrow, setShowUpArrow] = useState(false);
+  const [noDue, setNoDue] = useState(true);
+
   const [showDownArrow, setShowDownArrow] = useState(false);
   const { t } = useTranslation();
 
@@ -184,20 +186,22 @@ const HomeScreen = () => {
           `https://backend.clicksolver.com/api/worker/track/details`,
           {
             headers: { Authorization: `Bearer ${pcs_token}` },
-          }
+          } 
         );
-        const { route, parameter,name } = response.data;
+        const { route, parameter,name,no_due } = response.data;
+        console.log("res",response.data)
         const parsedParams = parameter ? JSON.parse(parameter) : null;
 
         // If no route or if route is "Paymentscreen"/"worktimescreen" => remove "workerInAction"
         if (!route || route === 'Paymentscreen' || route === 'worktimescreen') {
-          await EncryptedStorage.removeItem('workerInAction');
+          await EncryptedStorage.removeItem('workerInAction');  
         }
 
         setScreenName(route || '');
         setParams(parsedParams || {});
         setName(name || '')
         setMessageBoxDisplay(!!route);
+        setNoDue(no_due); 
       } else {
         await EncryptedStorage.removeItem('workerInAction');
         navigation.replace('Login');
@@ -440,7 +444,7 @@ const HomeScreen = () => {
   // Get FCM tokens
   const getTokens = async () => {
     try {
-      const storedToken = await EncryptedStorage.getItem('fcm_token');
+      const storedToken = await EncryptedStorage.getItem('partner_fcm_token');
       if (storedToken) {
         console.log('FCM token already exists, skipping backend update.');
         return;
@@ -463,7 +467,7 @@ const HomeScreen = () => {
         { headers: { Authorization: `Bearer ${pcs_token}` } },
       );
       if (response.status === 200) {
-        await EncryptedStorage.setItem('fcm_token', newToken);
+        await EncryptedStorage.setItem('partner_fcm_token', newToken);
       }
       console.log('New FCM token stored and sent to backend:', newToken);
     } catch (error) {
@@ -821,6 +825,16 @@ const HomeScreen = () => {
         </View>
       </View>
 
+      {!noDue && (
+        <View style={styles.noDueWarning}>
+          <Text style={styles.noDueWarningText}>
+            ⚠️ Your due is pending. You will not receive new services until you pay. 
+          </Text>
+          <Text style={styles.noDueInfoText}>
+            Don't worry! After you pay, your full amount will be returned to your account the next day.
+          </Text>
+        </View>
+      )}
 
 
       {/* {isEnabled ? (
@@ -1451,6 +1465,26 @@ function dynamicStyles(width, height, isDarkMode) {
       color: '#fff',
       fontSize: 16,
     },
+    noDueWarning: {
+      backgroundColor: isDarkMode ? '#2c2c2c' : '#fff3e0', // dark grey in dark mode, light orange otherwise
+      borderColor: isDarkMode ? '#ff9800' : '#ff9800',      // keep border same
+      borderWidth: 1,
+      padding: 14,
+      margin: 12,
+      borderRadius: 8,
+    },
+    noDueWarningText: {
+      color: isDarkMode ? '#ffcc80' : '#e65100',             // light orange text for dark, dark orange for light
+      fontWeight: 'bold',
+      fontSize: 15,
+      marginBottom: 6,
+    },
+    noDueInfoText: {
+      color: isDarkMode ? '#d7ccc8' : '#6d4c41',             // light brown for dark theme
+      fontSize: 13,
+    },
+    
+    
   }); 
 }
 

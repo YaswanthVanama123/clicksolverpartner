@@ -7,7 +7,7 @@ import {
   ScrollView,
   Modal,
   TouchableWithoutFeedback,
-  BackHandler,
+  BackHandler, 
   SafeAreaView,
   ActivityIndicator,
   useWindowDimensions,
@@ -82,7 +82,7 @@ const EarningsScreen = () => {
         payment_count = 0,
         life_earnings = 0,
         avg_rating = 0,
-        rejectedcount = 0,
+        rejected_count = 0,
         pendingcount = 0,
         total_time_worked_hours = 0,
         service_counts = 0,
@@ -100,7 +100,7 @@ const EarningsScreen = () => {
         payment_count: Number(payment_count),
         life_earnings: Number(life_earnings),
         avgrating: Number(avg_rating),
-        rejectedcount: Number(rejectedcount),
+        rejectedcount: Number(rejected_count),
         pendingcount: Number(pendingcount),
         minutes: Number(total_time_worked_hours) * 60,
         service_counts: serviceCountNum,
@@ -130,6 +130,7 @@ const EarningsScreen = () => {
   );
 
   const handleTabClick = (period) => {
+    {console.log("click")}
     setSelectedPeriod(period);
     if (period === t('today', 'Today')) {
       const today = new Date();
@@ -309,10 +310,10 @@ const EarningsScreen = () => {
       </View>
 
       <Text style={styles.cashBackAmount}>
-        {t('cash_back', 'Cash back')} ₹100
+        {t('cash_back', 'Cash back')} ₹50
       </Text>
       <View style={styles.completedCircle}>
-        <DestinationCircles complete={earnings.cashback} />
+        <DestinationCircles complete={earnings.service_counts} />
       </View>
 
       {/* Statistics */}
@@ -325,7 +326,7 @@ const EarningsScreen = () => {
           { value: earnings.life_earnings, title: t('total_earnings', 'Total Earnings'), color: '#4CAF50' },
           { value: earnings.cashback_gain, title: t('cashback_earned', 'Cashback Earned'), color: '#4CAF50' },
           { value: earnings.avgrating, title: t('avg_rating', 'Avg Rating'), color: '#4CAF50' },
-          { value: earnings.rejectedcount, title: t('rejected', 'Rejected'), color: '#ff4436' },
+          { value: earnings.rejectedcount, title: t('cancelled', 'Cancelled'), color: '#ff4436' },
           { value: earnings.cashback_pending, title: t('cashback_pending', 'Cashback pending'), color: '#ffa500' },
         ].map((stat, index) => (
           <View key={index} style={[styles.statBox, { borderLeftColor: stat.color }]}>

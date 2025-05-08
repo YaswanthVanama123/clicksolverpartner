@@ -67,7 +67,7 @@ const WorkerLoginScreen = () => {
     setLoading(true);
     try {
       const response = await axios.post(
-        'https://backend.clicksolver.com/api/worker/sendOtp',
+        'https://backend.clicksolver.com/api/partner/sendOtp',
         { mobileNumber: phoneNumber }
       );
       if (response.status === 200) {

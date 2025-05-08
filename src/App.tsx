@@ -66,9 +66,8 @@ import WorkerOnboardingScreen from './Components/WorkerOnboardingScreen';
 // Replace 'YOUR_PRODUCTION_KEY' with your actual key. Optionally, include serverUrl if using a self-hosted CodePush server.
 const codePushOptions = {
   checkFrequency: CodePush.CheckFrequency.ON_APP_START,
-  deploymentKey: '_NMtmNQ4_A125M3xcDCD01GkmHUFlW-060YNUG',
-  // Uncomment the next line if you have a custom server URL:
-  // serverUrl: 'http://<YOUR_SERVER_IP>:3000',
+  deploymentKey: '1b26419b-2817-11f0-ba9f-1a459c0f37ba', // Worker app production key
+  serverUrl: 'http://206.189.137.144:3000',
 };
 
 // Define your Stack and Tab navigators
@@ -171,13 +170,13 @@ function AppContent() {
       if(workerOnboarding){
       
       console.log("Logging out due to session expiration...");
-      const fcm_token = await EncryptedStorage.getItem('fcm_token');
-      console.log("fcm token", fcm_token);
-      if (fcm_token) {
-        await axios.post('https://backend.clicksolver.com/api/workerLogout', { fcm_token });
+      const partner_fcm_token = await EncryptedStorage.getItem('partner_fcm_token');
+      console.log("fcm token", partner_fcm_token);
+      if (partner_fcm_token) {
+        await axios.post('https://backend.clicksolver.com/api/workerLogout', { partner_fcm_token });
       }
       await EncryptedStorage.removeItem("pcs_token");
-      await EncryptedStorage.removeItem("fcm_token");
+      await EncryptedStorage.removeItem("partner_fcm_token");
       await EncryptedStorage.removeItem("unique");
       await EncryptedStorage.removeItem("firebaseDocId");
       await EncryptedStorage.removeItem("nullCoordinates");
@@ -210,7 +209,7 @@ function AppContent() {
         if(workerOnboarding){
           console.error('No PCS token found. Navigating to Login.');
           await EncryptedStorage.removeItem("pcs_token");
-          await EncryptedStorage.removeItem("fcm_token");
+          await EncryptedStorage.removeItem("partner_fcm_token");
           await EncryptedStorage.removeItem("unique");
           await EncryptedStorage.removeItem("firebaseDocId");
           await EncryptedStorage.removeItem("nullCoordinates");
@@ -230,7 +229,7 @@ function AppContent() {
         else{
         console.error('No PCS token found. Navigating to Login.');
         await EncryptedStorage.removeItem("pcs_token");
-        await EncryptedStorage.removeItem("fcm_token");
+        await EncryptedStorage.removeItem("partner_fcm_token");
         await EncryptedStorage.removeItem("unique");
         await EncryptedStorage.removeItem("firebaseDocId");
         await EncryptedStorage.removeItem("nullCoordinates");
@@ -246,7 +245,7 @@ function AppContent() {
       }
   
       // Next, check if FCM token already exists.
-      const storedToken = await EncryptedStorage.getItem('fcm_token');
+      const storedToken = await EncryptedStorage.getItem('partner_fcm_token');
       console.log(storedToken)
       if (storedToken) {
         console.log('FCM token already exists, skipping backend update.');
@@ -269,7 +268,7 @@ function AppContent() {
   
       // If successful, store the new token in EncryptedStorage.
       if (response.status === 200) {
-        await EncryptedStorage.setItem('fcm_token', newToken);
+        await EncryptedStorage.setItem('partner_fcm_token', newToken);
         console.log('New FCM token stored and sent to backend:', newToken);
       } else {
         console.error('Backend did not accept FCM token. Response status:', response.status);

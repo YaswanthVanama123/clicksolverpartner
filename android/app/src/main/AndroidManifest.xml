@@ -64,9 +64,9 @@
             android:value="23700aff2e24e9295ecf1a425e591fa25edb35b32b210263792dd175abc32a56" />
 
         <!-- TransistorSoft Polygon License Key --> 
-        <!-- <meta-data
+        <meta-data
             android:name="com.transistorsoft.locationmanager.polygon.license"
-            android:value="YOUR_POLYGON_LICENCE_KEY_HERE" /> -->
+            android:value="487a8bb4090e2886dd3cd0eaa3b02a71daaf2f9d8cc979ca488afcaa5dd712e5" />
 
         <!-- Google Play Services Requirement -->
         <meta-data

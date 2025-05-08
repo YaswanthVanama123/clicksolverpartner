@@ -216,7 +216,7 @@ const RegistrationScreen = () => {
         'Requestnotifications',
         'verification',
         'sign_up',
-        'fcm_token',
+        'partner_fcm_token',
         'start_work_time',
         'nullCoordinates',
       ];

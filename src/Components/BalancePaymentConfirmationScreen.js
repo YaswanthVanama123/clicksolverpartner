@@ -37,7 +37,7 @@ const BalancePaymentConfirmationScreen = () => {
       {/* Header with teal background */}
       <View style={styles.headerContainer}>
         <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#ffffff" />
+          <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Balance Payment Confirmation</Text>
       </View>
@@ -56,7 +56,7 @@ const BalancePaymentConfirmationScreen = () => {
 
         {/* Payment Status / Message */}
         <Text style={styles.statusMessage}>{message}</Text>
-
+        {console.log("dummy data version checjing for codepush updqate")}
         {/* Transaction Number */}
         <Text style={styles.transactionText}>
           Transaction Number : {transactionNumber}

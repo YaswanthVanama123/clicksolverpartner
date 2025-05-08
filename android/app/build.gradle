@@ -31,10 +31,10 @@ android {
         applicationId "com.clicksolverpartner"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 132
-        versionName "1.42"
+        versionCode 134
+        versionName "1.43.1"
         manifestPlaceholders = [
-            CodePushDeploymentKey: "_NMtmNQ4_A125M3xcDCD01GkmHUFlW-060YNUG" // Replace with your Production key
+            CodePushDeploymentKey: "1b26419b-2817-11f0-ba9f-1a459c0f37ba" // Replace with your Production key
         ]
     }
     signingConfigs {
